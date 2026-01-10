@@ -7,5 +7,21 @@ export default defineConfig({
     },
     server: {
         port: 51734
-    }
+    },
+    tools: {
+        rspack: {
+            module: {
+                rules: [
+                    {
+                        resourceQuery: /url$/,
+                        type: 'asset/resource',
+                    },
+                    {
+                        resourceQuery: /raw$/,
+                        type: 'asset/source',
+                    },
+                ],
+            },
+        },
+    },
 });

@@ -11,5 +11,8 @@
   "devDependencies": {
     "@rsbuild/core": "^1.6.14",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "planck": "^1.4.2"
   }
 }

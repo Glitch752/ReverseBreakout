@@ -34,6 +34,5 @@ void main() {
         sum += h_sum / 9.0;
     }
 
-    // outColor = texture(t0, tex_coord) - ((sum / 9.0) * bloom_intensity);
-    outColor = vec4(sum.xyz / 9.0, 1.0);
+    outColor = texture(t0, tex_coord) + ((sum / 9.0) * bloom_intensity);
 }

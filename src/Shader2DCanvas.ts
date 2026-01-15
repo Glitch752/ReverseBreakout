@@ -29,9 +29,18 @@ export class Shader2DCanvas {
     private texture: WebGLTexture;
     private framebuffer: WebGLFramebuffer;
 
+    private fragmentShaderSource: string;
+    private vertexShaderSource: string;
+
     private uniformLocations: { [key: string]: WebGLUniformLocation } = {};
     
-    constructor(private canvas: HTMLCanvasElement, private fragmentShaderSource: string = DEFAULT_FRAGMENT_SHADER, private vertexShaderSource: string = DEFAULT_VERTEX_SHADER) {
+    constructor(private canvas: HTMLCanvasElement, options?: {
+        fragment?: string,
+        vertex?: string
+    }) {
+        this.fragmentShaderSource = options?.fragment ?? DEFAULT_FRAGMENT_SHADER;
+        this.vertexShaderSource = options?.vertex ?? DEFAULT_VERTEX_SHADER;
+
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
         
@@ -118,7 +127,7 @@ export class Shader2DCanvas {
         if(!(name in this.uniformLocations)) {
             this.uniformLocations[name] = gl.getUniformLocation(this.program, name) as WebGLUniformLocation;
         }
-        gl.uniform1i(this.uniformLocations[name], value);
+        gl.uniform1f(this.uniformLocations[name], value);
     }
 
     /**

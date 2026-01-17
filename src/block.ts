@@ -30,14 +30,14 @@ export class Block {
         ctx.fillRect(x, y, width, height);
 
         ctx.strokeStyle = this.outlineColor;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 0.003;
         ctx.strokeRect(x, y, width, height);
 
-        if(this.hitsRemaining > 1) {
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = this.hitsRemaining;
-            ctx.strokeRect(x + this.hitsRemaining / 2, y + this.hitsRemaining / 2, width - this.hitsRemaining, height - this.hitsRemaining);
-        }
+        // if(this.hitsRemaining > 1) {
+        //     ctx.strokeStyle = 'white';
+        //     ctx.lineWidth = this.hitsRemaining;
+        //     ctx.strokeRect(x + this.hitsRemaining / 2, y + this.hitsRemaining / 2, width - this.hitsRemaining, height - this.hitsRemaining);
+        // }
     }
 
     /**
@@ -50,6 +50,8 @@ export class Block {
         });
         this.blockBody.createFixture({
             shape: new Box(this.width / 2, this.height / 2),
+            friction: 0.0,
+            density: 1.0,
             userData: this,
         });
     }

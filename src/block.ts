@@ -49,7 +49,7 @@ export class Block {
             position: { x: this.x + this.width / 2, y: this.y + this.height / 2 },
         });
         this.blockBody.createFixture({
-            shape: new Box(this.width / 2, this.height / 2),
+            shape: new Box(this.width / 2, this.height / 2, { x: 0, y: 0 }, 0),
             friction: 0.0,
             density: 1.0,
             userData: this,

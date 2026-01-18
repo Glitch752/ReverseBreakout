@@ -3,27 +3,60 @@ body {
     color: #fff;
     font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
     height: 100vh;
-    background-image: linear-gradient(to bottom, #020917, #101725);
-}
+    background-color: #040408;
 
-.content {
     display: flex;
-    min-height: 100vh;
-    line-height: 1.1;
-    text-align: center;
-    flex-direction: column;
     justify-content: center;
+    align-items: center;
 }
 
-.content h1 {
-    font-size: 3.6rem;
-    font-weight: 700;
+.menu {
+    text-align: center;
+    padding-bottom: 40vh;
 }
 
-.content p {
-    font-size: 1.2rem;
-    font-weight: 400;
-    opacity: 0.5;
+h1 {
+    margin-bottom: 0.5em;
+    font-size: 5rem;
+    position: relative;
+    
+    /* Gradient text */
+    background: linear-gradient(0deg, #ff7e5f, #fee87b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0.9;
+}
+
+h1::after {
+    /* small outline */
+    content: "Reverse Breakout";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    -webkit-text-stroke: 2px #935757;
+    color: transparent;
+}
+
+button#startButton {
+    margin-top: 1em;
+    padding: 0.5em 1em;
+    font-size: 1.5rem;
+    background-image: linear-gradient(0deg, #ff9665, #fed375);
+    border: none;
+    border-radius: 5px;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border: 2px solid #935757;
+}
+
+span#scoreDisplay {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-size: 1.5rem;
+    z-index: 10;
 }
 
 canvas {
@@ -33,4 +66,5 @@ canvas {
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: -2;
 }

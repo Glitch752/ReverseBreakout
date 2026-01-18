@@ -1,6 +1,9 @@
-import { Circle, Body, World, Box } from "planck";
+import { Circle, Body, World, Box, Fixture, Contact, Vec2 } from "planck";
+import { Block } from "./block";
 
 export class Ball {
+    public static readonly MIN_BALL_VELOCITY = 0.5;
+
     private ballBody: Body | null;
     private destroyed: boolean = false;
 
@@ -41,18 +44,37 @@ export class Ball {
             bullet: true,
         });
         this.ballBody.createFixture({
-            // shape: new Circle(this.radius),
-            shape: new Box(this.radius, this.radius),
+            shape: new Circle(this.radius),
             density: 1.0,
             restitution: 1.0,
             friction: 0.0,
             userData: this,
         });
-        this.ballBody.setLinearDamping(0);
+        this.ballBody.setLinearDamping(0.0);
+        this.ballBody.setAngularDamping(0.0);
     }
 
     public isDestroyed(): boolean {
         return this.destroyed;
+    }
+
+    public handleCollision(world: World, contact: Contact, otherFixture: Fixture) {
+        if(!this.ballBody) return;
+
+        const v = this.ballBody.getLinearVelocity();
+        const normal = contact.getWorldManifold(null)!.normal;
+
+        const dot = v.x * normal.x + v.y * normal.y;
+
+        const reflected = new Vec2(
+            v.x - 2 * dot * normal.x,
+            v.y - 2 * dot * normal.y
+        );
+
+        reflected.normalize();
+        reflected.mul(Math.max(Ball.MIN_BALL_VELOCITY, v.length()));
+
+        this.ballBody.setLinearVelocity(reflected);
     }
 
     public destroy(world: World) {

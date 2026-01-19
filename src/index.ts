@@ -1,5 +1,5 @@
 import './index.css';
-import { Vec2, World } from 'planck';
+import { World } from 'planck';
 import { Shader2DCanvas } from './Shader2DCanvas';
 import bloomFragmentShader from './bloom.frag?raw';
 import { Block } from './block';
@@ -7,6 +7,8 @@ import { Ball } from './ball';
 import { Camera } from './camera';
 import { Level } from './level';
 import { Paddle } from './paddle';
+import { Particles } from './particles';
+import { Stats } from './stats';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
@@ -171,6 +173,9 @@ class Game {
     private paddle: Paddle = new Paddle(0.0, 0.4, 0.15, 0.02);
 
     private camera = new Camera(0.0, 0.0, 1.0);
+    private particles: Particles = new Particles();
+
+    private stats: Stats = new Stats();
 
     constructor() {
         this.world.on("begin-contact", (contact) => {
@@ -179,12 +184,6 @@ class Game {
 
             const userDataA = fixtureA.getUserData();
             const userDataB = fixtureB.getUserData();
-
-            if(userDataA instanceof Block && userDataB instanceof Ball) {
-                userDataA.hit();
-            } else if(userDataB instanceof Block && userDataA instanceof Ball) {
-                userDataB.hit();
-            }
 
             // Balls should always maintain their speed
             let ball: Ball | null = null;
@@ -201,7 +200,7 @@ class Game {
             }
             
             if(ball && ballFixture && otherFixture) {
-                ball.handleCollision(this.world, contact, otherFixture);
+                ball.handleCollision(contact, otherFixture, this.particles);
             }
         });
 
@@ -226,13 +225,13 @@ class Game {
         
         // temporary
         // setInterval(() => {
-        //     balls.push(level.getInitialBalls()[0]);
-        //     balls[balls.length - 1].addToWorld(world);
-        //     if(balls.length > 20) {
-        //         balls[0].destroy(world);
-        //         balls.splice(0, 1);
+        //     this.balls.push(this.level.getInitialBalls()[0]);
+        //     this.balls[this.balls.length - 1].addToWorld(this.world);
+        //     if(this.balls.length > 20) {
+        //         this.balls[0].destroy(this.world);
+        //         this.balls.splice(0, 1);
         //     }
-        // }, 1000);
+        // }, 2000);
 
         this.camera.minimumScreenDimensions = this.level.minimumScreenDimensions;
     }
@@ -317,6 +316,10 @@ class Game {
         this.paddle.update(deltaTime, this.balls);
 
         // TODO: Level complete condition
+        
+
+        // Update particles
+        this.particles.update(deltaTime);
     }
 
     private gameOver() {
@@ -370,6 +373,7 @@ class Game {
         ctx.restore();
 
         ctx.globalAlpha = 1.0;
+        this.particles.draw(ctx);
         this.drawWorld();
 
         shader.render();

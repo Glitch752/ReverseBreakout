@@ -4,7 +4,8 @@ import type { Ball } from "./ball";
 enum PaddleAIMode {
     FOLLOW_BALL_AVERAGE,
     FOLLOW_SINGLE_BALL,
-    FOLLOW_LOWEST_BALL
+    FOLLOW_LOWEST_BALL,
+    FOLLOW_CLOSEST_TO_PADDLE
 }
 
 class PIDController {
@@ -25,11 +26,11 @@ class PIDController {
 export class Paddle {
     private outlineColor: string = 'white';
 
-    private maxSpeed: number = 2.0; // units per second
+    private maxSpeed: number = 1.5; // units per second
     private velocity: number = 0.0;
-    private pidController: PIDController = new PIDController(2.0, 0.01, 0.05);
+    private pidController: PIDController = new PIDController(5.0, 0.05, 0.05);
 
-    private aiMode: PaddleAIMode = PaddleAIMode.FOLLOW_LOWEST_BALL;
+    private aiMode: PaddleAIMode = PaddleAIMode.FOLLOW_CLOSEST_TO_PADDLE;
 
     private paddleBody: Body | null = null;
 
@@ -83,19 +84,25 @@ export class Paddle {
             this.x += this.velocity * deltaTime;
             return;
         }
-        
+
+        const lookaheadTime = 0.2; // seconds
+        const lookaheadPos = (ball: Ball): { x: number, y: number } => {
+            const predictedX = ball.position.x + ball.velocity.x * lookaheadTime;
+            return { x: predictedX, y: ball.position.y + ball.velocity.y * lookaheadTime };
+        };
+
         let targetX: number = this.x + this.width / 2;
         switch(this.aiMode) {
             case PaddleAIMode.FOLLOW_BALL_AVERAGE: {
                 let sumX = 0;
                 for(const ball of balls) {
-                    sumX += ball.position.x;
+                    sumX += lookaheadPos(ball).x;
                 }
                 targetX = sumX / balls.length;
                 break;
             }
             case PaddleAIMode.FOLLOW_SINGLE_BALL: {
-                targetX = balls[0].position.x;
+                targetX = lookaheadPos(balls[0]).x;
                 break;
             }
             case PaddleAIMode.FOLLOW_LOWEST_BALL: {
@@ -105,7 +112,34 @@ export class Paddle {
                         lowestBall = ball;
                     }
                 }
-                targetX = lowestBall.position.x;
+                targetX = lookaheadPos(lowestBall).x;
+                break;
+            }
+            case PaddleAIMode.FOLLOW_CLOSEST_TO_PADDLE: {
+                // Track the closest ball to the paddle in 2D space, preferring balls moving down
+                let closestBall = balls[0];
+                let closestScore = Infinity;
+                for(const ball of balls) {
+                    const pos = ball.position;
+                    const dx = (pos.x - (this.x + this.width / 2));
+                    const dy = (pos.y - (this.y + this.height / 2));
+                    // Ignore balls under the paddle
+                    if(dy > 0) continue;
+
+                    let score = dx * dx + dy * dy;
+                    if(ball.velocity.y < 0) score *= 100; // Prefer balls moving downwards
+                    if(score < closestScore) {
+                        closestScore = score;
+                        closestBall = ball;
+                    }
+                }
+
+                targetX = lookaheadPos(closestBall).x;
+                break;
+            }
+            default: {
+                const _exhaustiveCheck: never = this.aiMode;
+                console.error("Unknown PaddleAIMode:", _exhaustiveCheck);
                 break;
             }
         }

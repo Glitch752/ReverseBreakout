@@ -4,7 +4,7 @@ import { Box, World, Body } from "planck";
  * A descructable Breakout block.
  */
 export class Block {
-    private outlineColor: string;
+    public outlineColor: string;
     private fillColor: string;
 
     private hitsRemaining: number;

@@ -1,9 +1,11 @@
-import { Circle, Body, World, Box, Fixture, Contact, Vec2 } from "planck";
+import { Circle, Body, World, Fixture, Contact, Vec2 } from "planck";
 import { Block } from "./block";
 import { Paddle } from "./paddle";
+import type { Particles } from "./particles";
 
 export class Ball {
     public static readonly MIN_BALL_VELOCITY = 0.7;
+    public static readonly MAX_BALL_VELOCITY = 3.0;
     
     private ballBody: Body | null;
     private destroyed: boolean = false;
@@ -25,6 +27,14 @@ export class Ball {
     public get position(): { x: number; y: number } {
         if(!this.ballBody) return { x: 0, y: 0 };
         return this.ballBody.getPosition();
+    }
+
+    /**
+     * Get the velocity of the ball in world space.
+     */
+    public get velocity(): Vec2 {
+        if(!this.ballBody) return new Vec2(0, 0);
+        return this.ballBody.getLinearVelocity();
     }
     
     /**
@@ -49,6 +59,15 @@ export class Ball {
     public update(deltaTime: number) {
         if(!this.ballBody) return;
         
+        // Enforce max velocity
+        const speed = this.ballBody.getLinearVelocity().length();
+        if(speed > Ball.MAX_BALL_VELOCITY) {
+            const v = this.ballBody.getLinearVelocity();
+            v.normalize();
+            v.mul(Ball.MAX_BALL_VELOCITY);
+            this.ballBody.setLinearVelocity(v);
+        }
+
         // Make sure the ball can't get "soft-locked" going sideways
         const v = this.ballBody.getLinearVelocity();
         if(Math.abs(v.y) < 0.2) {
@@ -59,7 +78,10 @@ export class Ball {
         }
 
         // If the ball is unreasonably far from everything, destroy it as a fallback
-        
+        const pos = this.ballBody.getPosition();
+        if(Math.abs(pos.x) > 2 || Math.abs(pos.y) > 2) {
+            this.destroyed = true;
+        }
     }
     
     public addToWorld(world: World) {
@@ -85,17 +107,49 @@ export class Ball {
         return this.destroyed;
     }
     
-    public handleCollision(world: World, contact: Contact, otherFixture: Fixture) {
+    public handleCollision(contact: Contact, otherFixture: Fixture, particles: Particles) {
         if(!this.ballBody) return;
         
-        if(otherFixture.getUserData() === "death") {
+        const otherUserData = otherFixture.getUserData();
+        if(otherUserData === "death") {
             this.destroyed = true;
             return;
+        }
+
+        if(otherUserData instanceof Block) {
+            if(otherUserData.hit()) {
+                // Block was destroyed
+                particles.emitRectBurst(
+                    otherUserData.x,
+                    otherUserData.y,
+                    otherUserData.width,
+                    otherUserData.height,
+                    50,
+                    0.2,
+                    0.5,
+                    otherUserData.outlineColor
+                );
+            }
+
+            particles.emitDirectionalBurst(
+                this.ballBody.getPosition().x,
+                this.ballBody.getPosition().y,
+                -this.velocity.x,
+                -this.velocity.y,
+                Math.PI / 3,
+                30,
+                0.25,
+                0.5,
+                otherUserData.outlineColor
+            );
         }
         
         contact.setEnabled(false);
         
-        const otherUserData = otherFixture.getUserData();
+        // As velocity increases, we decrease restitution to balance extreme speeds a bit
+        let restitution = 1.0 - (this.velocity.length() - Ball.MIN_BALL_VELOCITY) / (Ball.MAX_BALL_VELOCITY - Ball.MIN_BALL_VELOCITY) * 0.3;
+        restitution = Math.max(0.5, Math.min(1.0, restitution));
+
         if(otherUserData instanceof Paddle) {
             // The angle isn't a direct reflection; it depends on where on the paddle we hit
             const paddle = otherUserData;
@@ -105,10 +159,10 @@ export class Ball {
             const relativeIntersectX = (ballPos.x - paddlePos) - paddleWidth / 2;
             const normalizedRelativeIntersectionX = relativeIntersectX / (paddleWidth / 2);
             const bounceAngle = normalizedRelativeIntersectionX * (Math.PI / 3); // Max 60 degrees
-            const speed = Math.max(Ball.MIN_BALL_VELOCITY, this.ballBody.getLinearVelocity().length());
+            const speed = Math.max(Ball.MIN_BALL_VELOCITY, this.velocity.length() * restitution);
             
             const newVelocity = new Vec2(
-                speed * Math.sin(bounceAngle),
+                speed * Math.sin(bounceAngle) * 0.5 + this.velocity.x * 0.5,
                 -speed * Math.cos(bounceAngle)
             );
             this.ballBody.setLinearVelocity(newVelocity);
@@ -126,7 +180,7 @@ export class Ball {
         );
         
         reflected.normalize();
-        reflected.mul(Math.max(Ball.MIN_BALL_VELOCITY, v.length()));
+        reflected.mul(Math.max(Ball.MIN_BALL_VELOCITY, v.length() * restitution));
         
         this.ballBody.setLinearVelocity(reflected);
     }

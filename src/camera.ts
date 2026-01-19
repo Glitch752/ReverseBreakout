@@ -18,7 +18,14 @@ export class Camera {
     }
 
     public trackBalls(balls: Ball[], deltaTime: number) {
-        if(balls.length === 0) return;
+        if(balls.length === 0) {
+            // Slowly return to center to show arena
+            const lerpFactor = 1 - Math.pow(0.6, deltaTime);
+            this.x += (0 - this.x) * lerpFactor;
+            this.y += (0 - this.y) * lerpFactor;
+            this.zoom += (0.8 - this.zoom) * lerpFactor;
+            return;
+        }
 
         // Calculate average position and maximum horizontal/vertical distance from average
         let minX = Infinity;

@@ -13,6 +13,11 @@ body {
 .menu {
     text-align: center;
     padding-bottom: 40vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
 }
 
 h1 {
@@ -52,11 +57,17 @@ button#startButton {
 }
 
 span#scoreDisplay {
+    font-size: 1.5rem;
+}
+
+a#githubIcon {
     position: fixed;
     top: 10px;
-    left: 10px;
-    font-size: 1.5rem;
+    right: 10px;
+    width: 48px;
+    height: 48px;
     z-index: 10;
+    color: white;
 }
 
 canvas {

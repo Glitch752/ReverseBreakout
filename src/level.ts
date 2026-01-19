@@ -1,4 +1,4 @@
-import { Chain, Vec2 } from "planck";
+import { Body, Box, Chain, Vec2, World } from "planck";
 import { Ball } from "./ball";
 import { Block } from "./block";
 
@@ -39,18 +39,35 @@ export class Level {
             }, {
                 x: Math.random() * 0.5 - 0.25,
                 y: -0.5
-            }, 0.015)
+            }, 0.012)
         ];
     }
 
     public getBorders(): Chain {
         // Create border chain shape
         return new Chain([
+            new Vec2(-ARENA_ASPECT_RATIO / 2, 0.5),
             new Vec2(-ARENA_ASPECT_RATIO / 2, -0.5),
             new Vec2(ARENA_ASPECT_RATIO / 2, -0.5),
             new Vec2(ARENA_ASPECT_RATIO / 2, 0.5),
-            new Vec2(-ARENA_ASPECT_RATIO / 2, 0.5),
-        ], true);
+        ], false);
+    }
+
+    public addDeathBody(world: World): Body {
+        // Create a body for the death area (bottom of the screen)
+        const deathBody = world.createBody({
+            type: 'static',
+            position: { x: 0, y: 0.55 }
+        });
+        deathBody.createFixture({
+            shape: new Chain([
+                new Vec2(-ARENA_ASPECT_RATIO / 2, 0),
+                new Vec2(ARENA_ASPECT_RATIO / 2, 0),
+            ], false),
+            userData: 'death',
+            isSensor: true
+        });
+        return deathBody;
     }
 
     /**
@@ -91,6 +108,13 @@ export class Level {
 
         // Draw the border itself
         ctx.lineWidth = 0.005;
-        ctx.strokeRect(-ARENA_ASPECT_RATIO / 2, -0.5, ARENA_ASPECT_RATIO, 1.0);
+
+        // All borders except the bottom since it's the out-of-bounds area
+        ctx.beginPath();
+        ctx.moveTo(-ARENA_ASPECT_RATIO / 2, 0.5);
+        ctx.lineTo(-ARENA_ASPECT_RATIO / 2, -0.5);
+        ctx.lineTo(ARENA_ASPECT_RATIO / 2, -0.5);
+        ctx.lineTo(ARENA_ASPECT_RATIO / 2, 0.5);
+        ctx.stroke();
     }
 }

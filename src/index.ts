@@ -1,11 +1,12 @@
 import './index.css';
-import { World } from 'planck';
+import { Vec2, World } from 'planck';
 import { Shader2DCanvas } from './Shader2DCanvas';
 import bloomFragmentShader from './bloom.frag?raw';
 import { Block } from './block';
 import { Ball } from './ball';
 import { Camera } from './camera';
 import { Level } from './level';
+import { Paddle } from './paddle';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
@@ -22,8 +23,8 @@ let lastTime: number | null = null;
 
 let menuBall: { x: number, y: number, vx: number, vy: number } = { x: 0.0, y: 0.0, vx: 200, vy: 300 };
 
-let lastMouseX = 0;
-let lastMouseY = 0;
+let lastMouseX = canvas.width / 2;
+let lastMouseY = canvas.height * 2 / 3;
 
 window.addEventListener('mousemove', (event) => {
     lastMouseX = event.clientX;
@@ -74,22 +75,19 @@ function draw(time: number) {
             if(menuBall.x + ballRadius > elLeft && menuBall.x - ballRadius < elRight &&
                menuBall.y + ballRadius > elTop && menuBall.y - ballRadius < elBottom) {
                 // Simple approach: just reverse velocity based on which side is closer
+                // This isn't ideal since the ball sometimes does weird things, but whatever... it's the menu.
                 const distLeft = Math.abs(menuBall.x - elLeft);
                 const distRight = Math.abs(menuBall.x - elRight);
                 const distTop = Math.abs(menuBall.y - elTop);
                 const distBottom = Math.abs(menuBall.y - elBottom);
                 const minDist = Math.min(distLeft, distRight, distTop, distBottom);
                 if(minDist === distLeft) {
-                    menuBall.x = elLeft - ballRadius;
                     menuBall.vx = -Math.abs(menuBall.vx) * restitution;
                 } else if(minDist === distRight) {
-                    menuBall.x = elRight + ballRadius;
                     menuBall.vx = Math.abs(menuBall.vx) * restitution;
                 } else if(minDist === distTop) {
-                    menuBall.y = elTop - ballRadius;
                     menuBall.vy = -Math.abs(menuBall.vy) * restitution;
                 } else if(minDist === distBottom) {
-                    menuBall.y = elBottom + ballRadius;
                     menuBall.vy = Math.abs(menuBall.vy) * restitution;
                 }
 
@@ -142,8 +140,23 @@ function draw(time: number) {
 
 requestAnimationFrame(draw);
 
-export function beginGame() {
-    game = new Game();
+document.getElementById("startButton")!.addEventListener("click", () => {
+    if(!game) {
+        game = new Game();
+        document.getElementById("menu")!.style.display = "none";
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if(game) game.onKeyDown(event);
+});
+document.addEventListener('keyup', (event) => {
+    if(game) game.onKeyUp(event);
+});
+
+function showMenu() {
+    game = null;
+    document.getElementById("menu")!.style.display = "flex";
 }
 
 class Game {
@@ -155,6 +168,7 @@ class Game {
     private level = new Level();
     private blocks: Block[] = this.level.getBlocks();
     private balls: Ball[] = this.level.getInitialBalls();
+    private paddle: Paddle = new Paddle(0.0, 0.4, 0.15, 0.02);
 
     private camera = new Camera(0.0, 0.0, 1.0);
 
@@ -205,6 +219,10 @@ class Game {
         for(const ball of this.balls) {
             ball.addToWorld(this.world);
         }
+
+        this.paddle.addToWorld(this.world);
+
+        this.level.addDeathBody(this.world);
         
         // temporary
         // setInterval(() => {
@@ -218,12 +236,55 @@ class Game {
 
         this.camera.minimumScreenDimensions = this.level.minimumScreenDimensions;
     }
+
+    private keysPressed: Set<string> = new Set();
+
+    public onKeyDown(event: KeyboardEvent) {
+        if(event.repeat) return;
+
+        if(event.code === 'Escape') {
+            showMenu();
+            return;
+        }
+
+        this.keysPressed.add(event.code);
+    }
+
+    public onKeyUp(event: KeyboardEvent) {
+        this.keysPressed.delete(event.code);
+    }
     
     /**
      * @param deltaTime Delta time in seconds
      */
     private update(deltaTime: number) {
-        this.world.step(deltaTime);
+        // Input
+        
+        let xForce = 0;
+        let yForce = 0;
+        
+        if(this.keysPressed.has('ArrowLeft') || this.keysPressed.has('KeyA')) xForce -= 1;
+        if(this.keysPressed.has('ArrowRight') || this.keysPressed.has('KeyD')) xForce += 1;
+        if(this.keysPressed.has('ArrowUp') || this.keysPressed.has('KeyW')) yForce -= 1;
+        if(this.keysPressed.has('ArrowDown') || this.keysPressed.has('KeyS')) yForce += 1;
+        
+        const length = Math.sqrt(xForce * xForce + yForce * yForce);
+        if(length > 0) {
+            xForce /= length;
+            yForce /= length;
+        }
+        
+        for(const ball of this.balls) {
+            if(ball.isDestroyed()) continue;
+
+            ball.applyForce(xForce * 0.3 * deltaTime, yForce * 0.3 * deltaTime);
+        }
+
+        // Physics / updates
+        const physicsSteps = 5;
+        for(let i = 0; i < physicsSteps; i++) {
+            this.world.step(deltaTime / physicsSteps, 4, 2);
+        }
         this.world.clearForces();
 
         this.camera.trackBalls(this.balls, deltaTime);
@@ -241,8 +302,27 @@ class Game {
             if(this.balls[i].isDestroyed()) {
                 this.balls[i].destroy(this.world);
                 this.balls.splice(i, 1);
+
+                if(this.balls.length === 0) {
+                    this.gameOver();
+                }
+
+                continue;
             }
+
+            this.balls[i].update(deltaTime);
         }
+
+        // Update paddle
+        this.paddle.update(deltaTime, this.balls);
+
+        // TODO: Level complete condition
+    }
+
+    private gameOver() {
+        // TODO
+        alert("Game Over!");
+        showMenu();
     }
     
     private drawWorld() {
@@ -253,6 +333,8 @@ class Game {
         for(const ball of this.balls) {
             ball.draw(ctx);
         }
+
+        this.paddle.draw(ctx);
     }
 
     public draw(deltaTime: number) {
@@ -262,7 +344,8 @@ class Game {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
         // Background
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#040408";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         this.camera.applyTransform(ctx);
         
@@ -290,7 +373,5 @@ class Game {
         this.drawWorld();
 
         shader.render();
-
-        requestAnimationFrame(this.draw.bind(this));
     }
 }

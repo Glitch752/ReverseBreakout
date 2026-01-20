@@ -26,9 +26,9 @@ class PIDController {
 export class Paddle {
     private outlineColor: string = 'white';
 
-    private maxSpeed: number = 0.5; // units per second
+    private maxSpeed: number = 1.0; // units per second
     private velocity: number = 0.0;
-    private pidController: PIDController = new PIDController(4.0, 0.05, 0.05);
+    private pidController: PIDController = new PIDController(6.0, 0.05, 0.05);
 
     private aiMode: PaddleAIMode = PaddleAIMode.FOLLOW_CLOSEST_TO_PADDLE;
 
@@ -63,6 +63,26 @@ export class Paddle {
         const y = this.y;
         const width = this.width;
         const height = this.height;
+
+        // Diagonal stripes
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, width, height);
+        ctx.clip();
+
+        const stripeWidth = 0.003;
+        ctx.fillStyle = "#777777";
+        for(let sx = -height; sx < width + height; sx += stripeWidth * 4) {
+            ctx.beginPath();
+            ctx.moveTo(x + sx, y);
+            ctx.lineTo(x + sx + stripeWidth, y);
+            ctx.lineTo(x + sx + stripeWidth - height, y + height);
+            ctx.lineTo(x + sx - height, y + height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        ctx.restore();
         
         ctx.strokeStyle = this.outlineColor;
         ctx.lineWidth = 0.003;
@@ -85,7 +105,7 @@ export class Paddle {
             return;
         }
 
-        const lookaheadTime = 0.2; // seconds
+        const lookaheadTime = 0.15; // seconds
         const lookaheadPos = (ball: Ball): { x: number, y: number } => {
             const predictedX = ball.position.x + ball.velocity.x * lookaheadTime;
             return { x: predictedX, y: ball.position.y + ball.velocity.y * lookaheadTime };

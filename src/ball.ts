@@ -113,6 +113,15 @@ export class Ball {
         const otherUserData = otherFixture.getUserData();
         if(otherUserData === "death") {
             this.destroyed = true;
+            particles.emitCircleBurst(
+                this.ballBody.getPosition().x,
+                this.ballBody.getPosition().y,
+                this.radius,
+                40,
+                0.3,
+                0.5,
+                'white'
+            );
             return;
         }
 
@@ -151,7 +160,7 @@ export class Ball {
         restitution = Math.max(0.5, Math.min(1.0, restitution));
 
         if(otherUserData instanceof Paddle) {
-            // The angle isn't a direct reflection; it depends on where on the paddle we hit
+            // Paddles don't create a direct reflection; it depends on where on the paddle we hit
             const paddle = otherUserData;
             const paddlePos = paddle.x;
             const paddleWidth = paddle.width;
@@ -162,10 +171,22 @@ export class Ball {
             const speed = Math.max(Ball.MIN_BALL_VELOCITY, this.velocity.length() * restitution);
             
             const newVelocity = new Vec2(
-                speed * Math.sin(bounceAngle) * 0.5 + this.velocity.x * 0.5,
+                speed * Math.sin(bounceAngle) * 0.5 + this.velocity.x,
                 -speed * Math.cos(bounceAngle)
             );
             this.ballBody.setLinearVelocity(newVelocity);
+
+            particles.emitDirectionalBurst(
+                this.ballBody.getPosition().x,
+                this.ballBody.getPosition().y,
+                this.velocity.x,
+                -1,
+                Math.PI / 3,
+                20,
+                0.2,
+                0.3,
+                'white'
+            );
             return;
         }
         

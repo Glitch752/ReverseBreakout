@@ -68,6 +68,21 @@ export class Particles {
     }
 
     /**
+     * Emit a burst of particles in a circle.
+     */
+    public emitCircleBurst(x: number, y: number, radius: number, count: number, speed: number, lifetime: number, colorString: string) {
+        const color = getColorComponents(colorString);
+        for(let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            const vx = Math.cos(angle) * speed * (0.5 + Math.random() * 0.5);
+            const vy = Math.sin(angle) * speed * (0.5 + Math.random() * 0.5);
+            this.emit(px, py, vx, vy, lifetime * (0.5 + Math.random() * 0.5), this.randomizeColor(color, 0.1));
+        }
+    }
+
+    /**
      * Emit a directional burst of particles from a point.
      */
     public emitDirectionalBurst(x: number, y: number, directionX: number, directionY: number, spread: number, count: number, speed: number, lifetime: number, colorString: string) {

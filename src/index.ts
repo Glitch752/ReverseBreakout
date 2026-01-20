@@ -2,7 +2,6 @@ import './index.css';
 import { World } from 'planck';
 import { Shader2DCanvas } from './Shader2DCanvas';
 import bloomFragmentShader from './bloom.frag?raw';
-import { Block } from './block';
 import { Ball } from './ball';
 import { Camera } from './camera';
 import { Level } from './level';
@@ -178,7 +177,6 @@ class Game {
     });
 
     private level = new Level();
-    private blocks: Block[] = this.level.getBlocks();
     private balls: Ball[] = this.level.getInitialBalls();
     private paddle: Paddle = new Paddle(0.0, 0.4, 0.15, 0.02);
 
@@ -186,6 +184,8 @@ class Game {
     private particles: Particles = new Particles();
 
     private stats: Stats = new Stats();
+
+    private gameRunning: boolean = true;
 
     constructor() {
         this.world.on("begin-contact", (contact) => {
@@ -222,9 +222,7 @@ class Game {
             friction: 0.0,
         });
 
-        for(const block of this.blocks) {
-            block.addToWorld(this.world);
-        }
+        this.level.initBlocksInWorld(this.world);
         for(const ball of this.balls) {
             ball.addToWorld(this.world);
         }
@@ -268,6 +266,12 @@ class Game {
      */
     private update(deltaTime: number) {
         // Input
+        this.camera.trackBalls(this.balls, deltaTime);
+
+        // Update particles
+        this.particles.update(deltaTime);
+
+        if(!this.gameRunning) return;
         
         this.stats.update(deltaTime);
 
@@ -299,16 +303,8 @@ class Game {
             this.world.step(deltaTime / physicsSteps, 4, 2);
         }
         this.world.clearForces();
-
-        this.camera.trackBalls(this.balls, deltaTime);
         
-        // Remove destroyed blocks
-        for(let i = this.blocks.length - 1; i >= 0; i--) {
-            if(this.blocks[i].isDestroyed()) {
-                this.blocks[i].destroy(this.world);
-                this.blocks.splice(i, 1);
-            }
-        }
+        this.level.update(this.world, deltaTime);
 
         // Remove destroyed balls
         for(let i = this.balls.length - 1; i >= 0; i--) {
@@ -328,24 +324,17 @@ class Game {
 
         // Update paddle
         this.paddle.update(deltaTime, this.balls);
-
-        // TODO: Level complete condition
-        
-
-        // Update particles
-        this.particles.update(deltaTime);
     }
 
     private gameOver() {
-        // TODO
-        alert("Game Over!");
-        showMenu();
+        this.gameRunning = false;
+        setTimeout(() => {
+            showMenu();
+        }, 5000);
     }
     
     private drawWorld() {
-        for(const block of this.blocks) {
-            block.draw(ctx);
-        }
+        this.level.drawWorld(ctx);
 
         for(const ball of this.balls) {
             ball.draw(ctx);

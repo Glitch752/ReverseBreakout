@@ -1,5 +1,10 @@
 import { Box, World, Body } from "planck";
 
+const BLOCK_FADE_IN_DURATION = 500; // milliseconds
+const easeOutCubic = (t: number): number => {
+    return 1 - Math.pow(1 - t, 3);
+};
+
 /**
  * A descructable Breakout block.
  */
@@ -10,10 +15,41 @@ export class Block {
     private hitsRemaining: number;
     private blockBody?: Body;
 
-    constructor(public x: number, public y: number, public width: number, public height: number, hitsRequired: number) {
+    private creationTime: number = performance.now();
+
+    private _x: number;
+    public get x(): number {
+        return this._x;
+    }
+    public set x(value: number) {
+        this._x = value;
+        if(this.blockBody) {
+            this.blockBody.setPosition({ x: this._x + this.width / 2, y: this.y + this.height / 2 });
+        }
+    }
+
+    private _y: number;
+    public get y(): number {
+        return this._y;
+    }
+    public set y(value: number) {
+        this._y = value;
+        if(this.blockBody) {
+            this.blockBody.setPosition({ x: this.x + this.width / 2, y: this._y + this.height / 2 });
+        }
+    }
+
+    constructor(
+        x: number, y: number, public width: number, public height: number,
+        hitsRequired: number, hue: number,
+        private fadeIn: boolean = false
+    ) {
+        this._x = x;
+        this._y = y;
+
         this.hitsRemaining = hitsRequired;
-        this.outlineColor = `hsl(${y * 700}, 100%, 80%)`;
-        this.fillColor = `hsl(${y * 700}, 80%, 5%)`;
+        this.outlineColor = `hsl(${hue}, 100%, 80%)`;
+        this.fillColor = `hsl(${hue}, 80%, 5%)`;
     }
 
     /**
@@ -22,9 +58,18 @@ export class Block {
      */
     public draw(ctx: CanvasRenderingContext2D) {
         const x = this.x;
-        const y = this.y;
+        let y = this.y;
         const width = this.width;
         const height = this.height;
+        let startAlpha = ctx.globalAlpha;
+
+        if(this.fadeIn) {
+            const elapsed = performance.now() - this.creationTime;
+            const t = Math.min(1, elapsed / BLOCK_FADE_IN_DURATION);
+            const alpha = easeOutCubic(t);
+            ctx.globalAlpha *= alpha;
+            y -= height * (1 - alpha);
+        }
 
         ctx.fillStyle = this.fillColor;
         ctx.fillRect(x, y, width, height);
@@ -33,11 +78,13 @@ export class Block {
         ctx.lineWidth = 0.003;
         ctx.strokeRect(x, y, width, height);
 
-        // if(this.hitsRemaining > 1) {
-        //     ctx.strokeStyle = 'white';
-        //     ctx.lineWidth = this.hitsRemaining;
-        //     ctx.strokeRect(x + this.hitsRemaining / 2, y + this.hitsRemaining / 2, width - this.hitsRemaining, height - this.hitsRemaining);
-        // }
+        if(this.hitsRemaining > 1) {
+            ctx.strokeStyle = '#dddddd';
+            ctx.lineWidth = 0.002 * this.hitsRemaining;
+            ctx.strokeRect(x + this.hitsRemaining / 2, y + this.hitsRemaining / 2, width - this.hitsRemaining, height - this.hitsRemaining);
+        }
+
+        ctx.globalAlpha = startAlpha;
     }
 
     /**

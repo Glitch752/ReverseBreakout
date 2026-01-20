@@ -1,6 +1,6 @@
 export class Stats {
     public energy: number = 1;
-    public score: number = 0;
+    // public score: number = 0;
     public time: number = 0;
 
     private timeValueElement: HTMLSpanElement = document.getElementById('timeHud') as HTMLSpanElement;
@@ -15,12 +15,12 @@ export class Stats {
         this.time += deltaTime;
 
         // Regenerate energy over time
-        this.energy += deltaTime * 0.05;
+        this.energy += deltaTime * 0.1;
         if(this.energy > 1) this.energy = 1;
 
         // Update HUD
         this.timeValueElement.textContent = this.formatTime();
-        this.scoreValueElement.textContent = this.score.toString();
+        // this.scoreValueElement.textContent = this.score.toString();
         this.energyFillElement.style.width = `${this.energy * 100}%`;
     }
 
@@ -30,7 +30,7 @@ export class Stats {
             return true;
         }
         return false;
-    }
+    }     
 
     private formatTime(): string {
         let totalSeconds = Math.floor(this.time);

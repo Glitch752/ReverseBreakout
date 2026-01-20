@@ -84,6 +84,10 @@ canvas {
     z-index: -2;
 }
 
+[data-game-ui] {
+    display: none;
+}
+
 
 .hud {
     position: fixed;

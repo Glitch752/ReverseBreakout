@@ -293,12 +293,16 @@ canvas {
                 pointer-events: auto;
             }
 
-            transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
+            transition: opacity 0.2s ease-in-out, filter 0.2s ease-in-out;
+            
+            opacity: 0.1;
+            pointer-events: none;
+            filter: grayscale(100%);
 
-            &[data-count="0"] {
-                opacity: 0.1;
-                pointer-events: none;
-                filter: grayscale(100%);
+            &[data-count]:not([data-count="0"]) {
+                opacity: 1;
+                pointer-events: auto;
+                filter: grayscale(0%);
             }
             &[data-count="2"] {
                 box-shadow: 0 3px 0 -2px #222, 0 3px 0 #333;

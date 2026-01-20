@@ -8,6 +8,7 @@ import { Level } from './level';
 import { Paddle } from './paddle';
 import { Particles } from './particles';
 import { Stats } from './stats';
+import type { PowerUp } from './powerUp';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
@@ -145,9 +146,7 @@ function startGame() {
     if(!game) {
         game = new Game();
         document.getElementById("menu")!.style.display = "none";
-        document.querySelectorAll<HTMLElement>('[data-game-ui]').forEach((el) => {
-            el.style.display = 'block';
-        });
+        document.getElementById("hud")!.style.display = 'block';
     }
 }
 document.getElementById("startButton")!.addEventListener("click", startGame);
@@ -178,6 +177,7 @@ class Game {
 
     private level = new Level();
     private balls: Ball[] = this.level.getInitialBalls();
+    private powerUps: PowerUp[] = [];
     private paddle: Paddle = new Paddle(0.0, 0.4, 0.15, 0.02);
 
     private camera = new Camera(0.0, 0.0, 1.0);
@@ -255,6 +255,8 @@ class Game {
         }
 
         this.keysPressed.add(event.code);
+
+        this.stats.checkAbilityBind(event.code);
     }
 
     public onKeyUp(event: KeyboardEvent) {
@@ -324,12 +326,24 @@ class Game {
             this.balls[i].update(deltaTime);
         }
 
+        // Remove destroyed power-ups
+        for(let i = this.powerUps.length - 1; i >= 0; i--) {
+            if(this.powerUps[i].isDestroyed) {
+                this.powerUps[i].destroy(this.world);
+                this.powerUps.splice(i, 1);
+                continue;
+            }
+            
+            this.powerUps[i].update(deltaTime);
+        }
+
         // Update paddle
         this.paddle.update(deltaTime, this.balls);
     }
 
     private gameOver() {
         this.gameRunning = false;
+        // TODO: Game over menu
         // setTimeout(() => {
         //     showMenu();
         // }, 5000);

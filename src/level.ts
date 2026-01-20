@@ -65,7 +65,9 @@ export class Level {
     public update(world: World, deltaTime: number) {
         // Slowly move blocks down over time
         this.blockOffsetY += this.layerMovementSpeed * deltaTime;
+
         this.hitDifficulty += 0.01 * deltaTime;
+        this.layerMovementSpeed += 0.0001 * deltaTime;
 
         let lowestBlockY = 0;
 

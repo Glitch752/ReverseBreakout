@@ -26,7 +26,7 @@ class PIDController {
 export class Paddle {
     private outlineColor: string = 'white';
 
-    private maxSpeed: number = 1.0; // units per second
+    private maxSpeed: number = 0.5; // units per second
     private velocity: number = 0.0;
     private pidController: PIDController = new PIDController(6.0, 0.05, 0.05);
 

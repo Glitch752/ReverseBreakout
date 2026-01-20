@@ -142,12 +142,19 @@ function draw(time: number) {
 
 requestAnimationFrame(draw);
 
-document.getElementById("startButton")!.addEventListener("click", () => {
+function startGame() {
     if(!game) {
         game = new Game();
         document.getElementById("menu")!.style.display = "none";
+        document.querySelectorAll<HTMLElement>('[data-game-ui]').forEach((el) => {
+            el.style.display = 'block';
+        });
     }
-});
+}
+document.getElementById("startButton")!.addEventListener("click", startGame);
+
+// TEMPORARY
+setTimeout(startGame, 500);
 
 document.addEventListener('keydown', (event) => {
     if(game) game.onKeyDown(event);
@@ -159,6 +166,9 @@ document.addEventListener('keyup', (event) => {
 function showMenu() {
     game = null;
     document.getElementById("menu")!.style.display = "flex";
+    document.querySelectorAll<HTMLElement>('[data-game-ui]').forEach((el) => {
+        el.style.display = 'none';
+    });
 }
 
 class Game {
@@ -259,6 +269,8 @@ class Game {
     private update(deltaTime: number) {
         // Input
         
+        this.stats.update(deltaTime);
+
         let xForce = 0;
         let yForce = 0;
         
@@ -266,17 +278,19 @@ class Game {
         if(this.keysPressed.has('ArrowRight') || this.keysPressed.has('KeyD')) xForce += 1;
         if(this.keysPressed.has('ArrowUp') || this.keysPressed.has('KeyW')) yForce -= 1;
         if(this.keysPressed.has('ArrowDown') || this.keysPressed.has('KeyS')) yForce += 1;
+
+        let  length = Math.sqrt(xForce * xForce + yForce * yForce);
+        if(length > 0 && !this.stats.tryTakeEnergy(0.4 * deltaTime)) length = 0;
         
-        const length = Math.sqrt(xForce * xForce + yForce * yForce);
         if(length > 0) {
             xForce /= length;
             yForce /= length;
-        }
-        
-        for(const ball of this.balls) {
-            if(ball.isDestroyed()) continue;
 
-            ball.applyForce(xForce * 0.3 * deltaTime, yForce * 0.3 * deltaTime);
+            for(const ball of this.balls) {
+                if(ball.isDestroyed()) continue;
+
+                ball.applyForce(xForce * 0.3 * deltaTime, yForce * 0.3 * deltaTime);
+            }
         }
 
         // Physics / updates

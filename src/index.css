@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     color: #fff;
@@ -78,4 +82,79 @@ canvas {
     width: 100%;
     height: 100%;
     z-index: -2;
+}
+
+
+.hud {
+    position: fixed;
+    inset: 0;
+    font-size: 1.2rem;
+    z-index: 5;
+    padding: 15px;
+}
+.hud .score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.hud .label {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #ccc;
+}
+.hud .value {
+    font-size: 2.0rem;
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.hud .time {
+    position: absolute;
+    width: 100%;
+    top: 10px;
+    font-size: 2.5rem;
+    text-align: center;
+}
+
+.hud .energy-bar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 320px;
+    height: 30px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    background-color: #111;
+}
+.hud .energy-bar svg {
+    height: 100%;
+    padding: 1px;
+    color: rgb(236, 232, 174);
+    position: absolute;
+    z-index: 10;
+    right: 0;
+}
+.hud .energy-bar path {
+    fill: currentColor;
+    stroke: black;
+    stroke-width: 2;
+}
+.hud .energy-bar .energy-fill {
+    --color-1: #efd87b;
+    --color-2: #ecca66;
+    --separation: 8px;
+
+    transition: width 0.05s ease-in-out;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+        -45deg,
+        var(--color-1),
+        var(--color-1) var(--separation),
+        var(--color-2) var(--separation),
+        var(--color-2) calc(var(--separation) * 2)
+    );
+    border-radius: 3px;
+
+    position: absolute;
+    top: 0;
 }

@@ -41,8 +41,8 @@ export class Shader2DCanvas {
         this.fragmentShaderSource = options?.fragment ?? DEFAULT_FRAGMENT_SHADER;
         this.vertexShaderSource = options?.vertex ?? DEFAULT_VERTEX_SHADER;
 
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        canvas.width = canvas.clientWidth * window.devicePixelRatio;
+        canvas.height = canvas.clientHeight * window.devicePixelRatio;
         
         this.canvas2D = document.createElement('canvas');
         this.canvas2D.width = canvas.width;
@@ -72,8 +72,8 @@ export class Shader2DCanvas {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
         this.resizeObserver = new ResizeObserver(() => {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
+            canvas.width = canvas.clientWidth * window.devicePixelRatio;
+            canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
             this.canvas2D.width = canvas.width;
             this.canvas2D.height = canvas.height;

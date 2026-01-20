@@ -30,6 +30,7 @@ body {
         
         /* Gradient text */
         background: linear-gradient(0deg, #ff7e5f, #fee87b);
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         opacity: 0.9;
@@ -211,6 +212,163 @@ canvas {
                 height: 1.2em;
                 vertical-align: middle;
                 color: #ccc;
+            }
+        }
+    }
+
+    .abilities {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+
+        .ability {
+            background-color: #111;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            border: 2px solid #333;
+
+            border-radius: 0 10px 10px 10px;
+            &:has(.count.visible) {
+                border-top-right-radius: 0;
+            }
+
+            .keybind, .count {
+                position: absolute;
+                bottom: 100%;
+                color: #aaa;
+                background-color: #111;
+                border: 2px solid #333;
+                border-bottom: none;
+                border-radius: 5px 5px 0 0;
+                padding: 0 5px;
+                line-height: 1.2;
+                font-weight: bold;
+                margin: 0;
+            }
+
+            .keybind {
+                left: -2px;
+                font-size: 1.25rem;
+                height: 1.2rem;
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .count {
+                right: -2px;
+                font-size: 1rem;
+                height: 0.8rem;
+                display: none;
+                &.visible {
+                    display: block;
+                }
+            }
+
+            svg {
+                width: 4rem;
+                height: 4rem;
+                color: hsl(var(--ability-hue), 70%, 80%);
+            }
+
+            .ability-hint {
+                position: absolute;
+                bottom: 100%;
+                left: -2px;
+                margin-bottom: 1.5rem;
+
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(-3px);
+                transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+            }
+
+            &:hover .ability-hint {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+
+            transition: opacity 0.3s ease-in-out, filter 0.3s ease-in-out;
+
+            &[data-count="0"] {
+                opacity: 0.1;
+                pointer-events: none;
+                filter: grayscale(100%);
+            }
+            &[data-count="2"] {
+                box-shadow: 0 3px 0 -2px #222, 0 3px 0 #333;
+                translate: 0 -3px;
+            }
+            // Add another shadow for each additional count
+            &[data-count="3"] {
+                box-shadow: 0 3px 0 -2px #222, 0 3px 0 #333, 0 6px 0 -2px #222, 0 6px 0 #333;
+                translate: 0 -6px;
+            }
+            &[data-count="4"] {
+                box-shadow: 0 3px 0 -2px #222, 0 3px 0 #333, 0 6px 0 -2px #222, 0 6px 0 #333, 0 9px 0 -2px #222, 0 9px 0 #333;
+                translate: 0 -9px;
+            }
+        }
+
+        .new-ability-hint {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 1.5rem;
+            padding: 10px 12px !important;
+
+            .title {
+                font-size: 1rem;
+                color: #aaa;
+            }
+
+            opacity: 0;
+            transform: translateY(-5px);
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+
+            &.visible {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+        }
+
+        .ability-hint {
+            width: max-content;
+
+            background-color: #111;
+            border: 2px solid #333;
+            border-radius: 5px;
+            padding: 5px 12px;
+            
+            display: flex;
+            flex-direction: column;
+
+            h1 {
+                margin: 0;
+                font-size: 1.5rem;
+            }
+
+            > span {
+                font-size: 1rem;
+                color: #ccc;
+            }
+            .action {
+                color: hsl(var(--ability-hue), 70%, 70%);
+            }
+            .name {
+                color: hsl(var(--ability-hue), 70%, 80%);
+            }
+
+            pre {
+                display: inline;
+                padding: 0 3px;
             }
         }
     }

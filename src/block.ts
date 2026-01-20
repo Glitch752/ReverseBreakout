@@ -79,9 +79,8 @@ export class Block {
         ctx.strokeRect(x, y, width, height);
 
         if(this.hitsRemaining > 1) {
-            ctx.strokeStyle = '#dddddd';
-            ctx.lineWidth = 0.002 * this.hitsRemaining;
-            ctx.strokeRect(x + this.hitsRemaining / 2, y + this.hitsRemaining / 2, width - this.hitsRemaining, height - this.hitsRemaining);
+            ctx.lineWidth = 0.001 * this.hitsRemaining;
+            ctx.strokeRect(x + 0.01, y + 0.01, width - 0.02, height - 0.02);
         }
 
         ctx.globalAlpha = startAlpha;

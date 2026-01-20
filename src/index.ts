@@ -1,4 +1,4 @@
-import './index.css';
+import './index.scss';
 import { World } from 'planck';
 import { Shader2DCanvas } from './Shader2DCanvas';
 import bloomFragmentShader from './bloom.frag?raw';
@@ -265,8 +265,11 @@ class Game {
      * @param deltaTime Delta time in seconds
      */
     private update(deltaTime: number) {
-        // Input
-        this.camera.trackBalls(this.balls, deltaTime);
+        if(this.level.gameOver() && this.gameRunning) {
+            this.gameOver();
+        }
+
+        this.camera.trackBalls(this.balls, !this.gameRunning, deltaTime);
 
         // Update particles
         this.particles.update(deltaTime);
@@ -275,9 +278,8 @@ class Game {
         
         this.stats.update(deltaTime);
 
-        let xForce = 0;
-        let yForce = 0;
-        
+        // Input
+        let xForce = 0, yForce = 0;
         if(this.keysPressed.has('ArrowLeft') || this.keysPressed.has('KeyA')) xForce -= 1;
         if(this.keysPressed.has('ArrowRight') || this.keysPressed.has('KeyD')) xForce += 1;
         if(this.keysPressed.has('ArrowUp') || this.keysPressed.has('KeyW')) yForce -= 1;
@@ -328,9 +330,9 @@ class Game {
 
     private gameOver() {
         this.gameRunning = false;
-        setTimeout(() => {
-            showMenu();
-        }, 5000);
+        // setTimeout(() => {
+        //     showMenu();
+        // }, 5000);
     }
     
     private drawWorld() {
@@ -360,7 +362,7 @@ class Game {
         ctx.translate(this.camera.x, this.camera.y);
         ctx.scale(0.98, 0.98);
         ctx.translate(-this.camera.x, -this.camera.y);
-        this.level.draw(ctx);
+        this.level.draw(ctx, deltaTime);
         this.level.drawBorder(ctx);
         ctx.restore();
         

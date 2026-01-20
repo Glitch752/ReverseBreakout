@@ -17,8 +17,8 @@ export class Camera {
         ctx.scale(screenScale * this.zoom, screenScale * this.zoom);
     }
 
-    public trackBalls(balls: Ball[], deltaTime: number) {
-        if(balls.length === 0) {
+    public trackBalls(balls: Ball[], gameOver: boolean, deltaTime: number) {
+        if(balls.length === 0 || gameOver) {
             // Slowly return to center to show arena
             const lerpFactor = 1 - Math.pow(0.6, deltaTime);
             this.x += (0 - this.x) * lerpFactor;

@@ -17,16 +17,29 @@
         </a>
     </div>
     <div class="hud" id="hud" data-game-ui>
-        <!-- <div class="score">
-            <span class="label">Score</span>
-            <span class="value" id="scoreHud">0</span>
+        <!-- <div class="modifiers">
+            <div class="modifier">
+                <span class="label">Block speed</span>
+                <span class="content" id="layerSpeedHud">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M10.45 15.5q.6.6 1.55.588t1.4-.688l4.225-6.325q.225-.35-.062-.638t-.638-.062L10.6 12.6q-.675.45-.712 1.375t.562 1.525M12 4q.9 0 1.775.15t1.7.475q.4.15.85.563t.25.787t-.9.5t-1.125-.025q-.625-.225-1.262-.337T12 6Q8.675 6 6.337 8.338T4 14q0 1.05.288 2.075T5.1 18h13.8q.575-.95.838-1.975T20 13.9q0-.65-.113-1.275T19.55 11.4q-.15-.425-.05-.825t.45-.675q.325-.25.713-.15t.537.45q.375.875.575 1.788T22 13.85q.025 1.425-.325 2.725T20.65 19.05q-.275.45-.75.7t-1 .25H5.1q-.525 0-1-.25t-.75-.7q-.65-1.125-1-2.387T2 14q0-2.075.788-3.887t2.15-3.175t3.187-2.15T12 4m.175 7.825"/></svg>
+                    <span class="value">1%</span>
+                </span>
+                <div class="modifier-fill">
+                    <div class="modifier-fill-inner" id="layerSpeedFill"></div>
+                </div>
+            </div>
+            <div class="modifier">
+                <span class="label">Breaking difficulty</span>
+                <span class="content" id="breakingDifficultyHud">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm1-8.425l3.3-3.3q.3-.3.7-.3t.7.3l3.3 3.3l3.3-3.3q.3-.3.7-.3t.7.3l.3.3V5H5v6.575zM5 19h14v-6.6l-1-1l-3.3 3.3q-.3.3-.7.3t-.7-.3L10 11.4l-3.3 3.3q-.3.3-.7.3t-.7-.3l-.3-.3zm0 0v-6.6v2V5z"/></svg>
+                    <span class="value">1</span>
+                </span>
+                <div class="modifier-fill">
+                    <div class="modifier-fill-inner" id="layerSpeedFill"></div>
+                </div>
+            </div>
         </div> -->
-        <div class="modifiers">
-            <div class="modifier"></div>
-        </div>
-        <div class="time">
-            <span class="value" id="timeHud">0:00.000</span>
-        </div>
+        <span class="time" id="timeHud">0:00.000</span>
         <div class="energy-bar">
             <svg viewBox="0 0 24 24"><path d="M9 15H5.9q-.6 0-.888-.537t.063-1.038l7.475-10.75q.25-.35.65-.487t.825.012t.625.525t.15.8L14 10h3.875q.65 0 .913.575t-.163 1.075L10.4 21.5q-.275.325-.675.425t-.775-.075t-.587-.537t-.163-.788z"/></svg>
             <div class="energy-fill" id="energyFill"></div>

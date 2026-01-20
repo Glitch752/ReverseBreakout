@@ -1,4 +1,4 @@
-import { Body, Box, Chain, Vec2, World } from "planck";
+import { Body, Chain, Vec2, World } from "planck";
 import { Ball } from "./ball";
 import { Block } from "./block";
 
@@ -11,6 +11,41 @@ const BLOCK_TOTAL_HEIGHT = 0.3;
 const BLOCK_LAYER_WIDTH = (1 / BLOCKS_X) * INITIAL_ARENA_ASPECT_RATIO;
 const BLOCK_LAYER_HEIGHT = (1 / BLOCKS_Y) * BLOCK_TOTAL_HEIGHT;
 
+// Fill a rectangle where the top and bottom edges follow a wavy pattern
+function wavyRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+    const waveAmplitude = 0.005;
+    const wavelength = width / 10;
+    const segments = width / wavelength * 2;
+
+    const wave = (t: number) => {
+        // Triangle wave
+        return 2 * Math.abs(2 * (t - Math.floor(t + 0.5))) - 1;
+    };
+
+    // Top edge
+    ctx.beginPath();
+    for(let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const px = x + t * width;
+        const py = y + waveAmplitude * wave(t * (width / wavelength));
+        if(i === 0) {
+            ctx.moveTo(px, py);
+        } else {
+            ctx.lineTo(px, py);
+        }
+    }
+    // Bottom edge
+    for(let i = segments; i >= 0; i--) {
+        const t = i / segments;
+        const px = x + t * width;
+        const py = y + height + waveAmplitude * wave(t * (width / wavelength));
+        ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+
+    ctx.fill();
+}
+
 export class Level {
     public minimumScreenDimensions: [number, number] = [INITIAL_ARENA_ASPECT_RATIO * 1.05, 1.05];
     private blocks: Block[] = [];
@@ -22,20 +57,35 @@ export class Level {
     /** A higher hit difficulty increases the chances that blocks require multiple hits to be destroyed */
     private hitDifficulty: number = 0;
 
+    private lowestBlockY: number = 0;
+    public gameOver(): boolean {
+        return this.lowestBlockY > 0.5;
+    }
+
     public update(world: World, deltaTime: number) {
+        // Slowly move blocks down over time
+        this.blockOffsetY += this.layerMovementSpeed * deltaTime;
+        this.hitDifficulty += 0.01 * deltaTime;
+
+        let lowestBlockY = 0;
+
         // Remove destroyed blocks
         for(let i = this.blocks.length - 1; i >= 0; i--) {
-            if(this.blocks[i].isDestroyed()) {
-                this.blocks[i].destroy(world);
+            const block = this.blocks[i];
+            if(block.isDestroyed()) {
+                block.destroy(world);
                 this.blocks.splice(i, 1);
+            }
+            
+            block.y += this.layerMovementSpeed * deltaTime;
+            
+            const blockY = block.y + block.height;
+            if(blockY > lowestBlockY) {
+                lowestBlockY = blockY;
             }
         }
 
-        // Slowly move blocks down over time
-        this.blockOffsetY += this.layerMovementSpeed * deltaTime;
-        for(const block of this.blocks) {
-            block.y += this.layerMovementSpeed * deltaTime;
-        }
+        this.lowestBlockY = lowestBlockY;
 
         // Add new block layers as needed
         if(this.blockOffsetY >= BLOCK_LAYER_HEIGHT) {
@@ -44,7 +94,7 @@ export class Level {
 
             for(let x = 0; x < BLOCKS_X; x++) {
                 const hue = this.addedBlockLayers * -60;
-                const hits = Math.ceil(this.hitDifficulty) + Math.random();
+                const hits = Math.ceil(this.hitDifficulty + Math.random());
                 setTimeout(() => {
                     const block = new Block(
                         x * BLOCK_LAYER_WIDTH + BLOCK_PADDING - INITIAL_ARENA_ASPECT_RATIO / 2,
@@ -130,10 +180,12 @@ export class Level {
         }
     }
 
+    private warningSlew: number = 0;
+
     /**
      * Draw the level background
      */
-    public draw(ctx: CanvasRenderingContext2D) {
+    public draw(ctx: CanvasRenderingContext2D, deltaTime: number) {
         ctx.strokeStyle = "#111111";
 
         // Clip to arena borders
@@ -156,8 +208,23 @@ export class Level {
             }
             ctx.stroke();
         }
-
+ 
         ctx.restore();
+
+        let warning = this.lowestBlockY > 0.25 ? 1 : 0;
+        this.warningSlew += (warning - this.warningSlew) * (1 - Math.pow(0.05, deltaTime));
+
+        // Draw a warning line if the blocks are getting too low
+        if(this.warningSlew > 0.01) {
+            ctx.globalAlpha = this.warningSlew * (Math.sin(Date.now() / 400) * 0.25 + 0.5) * 0.1;
+            // Orange warning area
+            ctx.fillStyle = `rgba(255, 165, 50)`;
+            wavyRect(ctx, -INITIAL_ARENA_ASPECT_RATIO / 2, 0.25, INITIAL_ARENA_ASPECT_RATIO, 0.25);
+            // Red death area
+            ctx.fillStyle = `rgba(255, 50, 50)`;
+            wavyRect(ctx, -INITIAL_ARENA_ASPECT_RATIO / 2, 0.5, INITIAL_ARENA_ASPECT_RATIO, 0.03);
+            ctx.globalAlpha = 1.0;
+        }
     }
 
     /**

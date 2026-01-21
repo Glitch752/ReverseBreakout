@@ -1,6 +1,7 @@
 import { Body, Chain, Vec2, World } from "planck";
 import { Ball } from "./ball";
 import { Block } from "./block";
+import { Signal } from "./signal";
 
 const INITIAL_ARENA_ASPECT_RATIO = 16 / 9;
 
@@ -57,6 +58,11 @@ export class Level {
     /** A higher hit difficulty increases the chances that blocks require multiple hits to be destroyed */
     private hitDifficulty: number = 0;
 
+    public spawnPowerUp = new Signal<[
+        { x: number, y: number }, // Initial position
+        { x: number, y: number } // Initial velocity
+    ]>();
+
     private lowestBlockY: number = 0;
     public gameOver(): boolean {
         return this.lowestBlockY > 0.5;
@@ -108,9 +114,24 @@ export class Level {
                     );
                     this.blocks.push(block);
                     block.addToWorld(world);
+                    this.attachPowerUpSpawner(block);
                 }, Math.random() * 1000);
             }
         }
+    }
+
+    private attachPowerUpSpawner(block: Block) {
+        block.spawnPowerUp.connect(() => {
+            const pos = {
+                x: block.x + block.width / 2,
+                y: block.y + block.height / 2
+            };
+            const vel = {
+                x: (Math.random() - 0.5) * 0.2,
+                y: -0.2
+            };
+            this.spawnPowerUp.emit(pos, vel);
+        });
     }
 
     public initBlocksInWorld(world: World) {
@@ -131,6 +152,7 @@ export class Level {
 
         for(const block of this.blocks) {
             block.addToWorld(world);
+            this.attachPowerUpSpawner(block);
         }
     }
 
@@ -201,10 +223,10 @@ export class Level {
         ctx.closePath();
         ctx.clip();
 
-        const spacing = 0.01;
+        const spacing = 0.02;
         for(let x = -INITIAL_ARENA_ASPECT_RATIO / 2 * 1.1; x <= INITIAL_ARENA_ASPECT_RATIO / 2 * 1.1; x += spacing) {
             ctx.beginPath();
-            for(let y = -0.5; y <= 0.5; y += 0.001) {
+            for(let y = -0.5; y <= 0.5; y += 0.1) {
                 const offsetX = 0.02 * Math.sin(10 * (y + 0.5) + 5 * x);
                 ctx.lineTo(x + offsetX, y);
             }

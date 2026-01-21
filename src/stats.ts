@@ -1,5 +1,8 @@
 import { Signal } from "./signal";
 
+// Intentionally not persisted in browser storage but persisted across game runs
+const seenAbilities: Set<string> = new Set();
+
 export class Stats {
     public energy: number = 1;
     // public score: number = 0;
@@ -15,6 +18,7 @@ export class Stats {
         normalizedProbability: number,
         styleHue: string,
         count: number,
+        icon: HTMLImageElement,
         element: HTMLElement
     }> = new Map();
 
@@ -30,6 +34,7 @@ export class Stats {
             bind: string,
             probability: number,
             styleHue: string,
+            icon: HTMLImageElement,
             element: HTMLElement
         }[] = [];
         document.querySelectorAll<HTMLElement>('.ability').forEach((el) => {
@@ -40,12 +45,32 @@ export class Stats {
             const probability = parseFloat(el.dataset.abilityProbability ?? '0');
             const hue = el.style.getPropertyValue('--ability-hue') ?? '0deg';
 
+            // Convert the SVG to an image element for later use
+            let svg = el.querySelector('svg');
+            // Modify the SVG to include the hue as a color
+            svg = svg?.cloneNode(true) as SVGSVGElement;
+            if(svg) {
+                svg.style.color = `hsl(${hue}, 70%, 60%)`;
+            }
+            const svgData = new XMLSerializer().serializeToString(svg!);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            const icon = new Image();
+            icon.width = 32;
+            icon.height = 32;
+            icon.src = url;
+
             abilities.push({
                 id, name, description, bind, probability,
                 styleHue: hue,
-                element: el
+                element: el,
+                icon: icon
             });
             totalProbability += probability;
+
+            el.addEventListener('click', () => {
+                this.checkAbilityBind(bind);
+            });
         });
 
         // Normalize probabilities and store abilities
@@ -57,11 +82,29 @@ export class Stats {
                 normalizedProbability: ability.probability / totalProbability,
                 styleHue: ability.styleHue,
                 element: ability.element,
+                icon: ability.icon,
                 count: 0
             });
 
             this.updateAbilityElement(ability.id);
         }
+    }
+
+    public selectAbility(): {
+        id: string,
+        icon: HTMLImageElement,
+        color: string
+    } {
+        const rand = Math.random();
+        let cumulative = 0;
+        for(const [id, ability] of this.abilities) {
+            cumulative += ability.normalizedProbability;
+            if(rand <= cumulative) {
+                return { id, icon: ability.icon, color: `hsl(${ability.styleHue}, 70%, 60%)` };
+            }
+        }
+        
+        throw new Error("no ability selected. check ability probabilities");
     }
 
     public checkAbilityBind(key: string) {
@@ -87,6 +130,12 @@ export class Stats {
         if(!ability) return;
         ability.count += 1;
         this.updateAbilityElement(id);
+        
+        ability.element.animate([
+            { transform: 'scale(1)' },
+            { transform: 'scale(1.1)' },
+            { transform: 'scale(1)' },
+        ], { duration: 200, easing: 'ease-out' });
     }
 
     private updateAbilityElement(id: string) {

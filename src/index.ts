@@ -8,7 +8,7 @@ import { Level } from './level';
 import { Paddle } from './paddle';
 import { Particles } from './particles';
 import { Stats } from './stats';
-import type { PowerUp } from './powerUp';
+import { PowerUp } from './powerUp';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
@@ -188,6 +188,19 @@ class Game {
     private gameRunning: boolean = true;
 
     constructor() {
+        this.world.on("pre-solve", (contact) => {
+            const fixtureA = contact.getFixtureA();
+            const fixtureB = contact.getFixtureB();
+
+            const userDataA = fixtureA.getUserData();
+            const userDataB = fixtureB.getUserData();
+
+            if((userDataA instanceof PowerUp && userDataB instanceof Ball) ||
+                (userDataB instanceof PowerUp && userDataA instanceof Ball)) {
+                contact.setEnabled(false);
+            }
+        })
+
         this.world.on("begin-contact", (contact) => {
             const fixtureA = contact.getFixtureA();
             const fixtureB = contact.getFixtureB();
@@ -210,7 +223,7 @@ class Game {
             }
             
             if(ball && ballFixture && otherFixture) {
-                ball.handleCollision(contact, otherFixture, this.particles);
+                ball.handleCollision(contact, otherFixture, this.particles, this.stats);
             }
         });
 
@@ -242,6 +255,13 @@ class Game {
         // }, 2000);
 
         this.camera.minimumScreenDimensions = this.level.minimumScreenDimensions;
+
+        this.level.spawnPowerUp.connect((pos, vel) => {
+            const ability = this.stats.selectAbility();
+            const powerUp = new PowerUp(pos, vel, ability.id, ability.icon, ability.color);
+            powerUp.addToWorld(this.world);
+            this.powerUps.push(powerUp);
+        });
     }
 
     private keysPressed: Set<string> = new Set();
@@ -253,6 +273,8 @@ class Game {
             showMenu();
             return;
         }
+
+        if(!this.gameRunning) return;
 
         this.keysPressed.add(event.code);
 
@@ -297,7 +319,7 @@ class Game {
             for(const ball of this.balls) {
                 if(ball.isDestroyed()) continue;
 
-                ball.applyForce(xForce * 0.3 * deltaTime, yForce * 0.3 * deltaTime);
+                ball.applyForce(xForce * 0.003, yForce * 0.003);
             }
         }
 
@@ -350,6 +372,10 @@ class Game {
     }
     
     private drawWorld() {
+        for(const powerUp of this.powerUps) {
+            powerUp.draw(ctx);
+        }
+
         this.level.drawWorld(ctx);
 
         for(const ball of this.balls) {

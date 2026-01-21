@@ -50,7 +50,7 @@ export class Paddle {
             shape: new Box(this.width / 2, this.height / 2, { x: 0, y: 0 }, 0),
             friction: 0.0,
             density: 1.0,
-            userData: this,
+            userData: this
         });
     }
 

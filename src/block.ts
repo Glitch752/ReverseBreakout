@@ -1,4 +1,5 @@
 import { Box, World, Body } from "planck";
+import { Signal } from "./signal";
 
 const BLOCK_FADE_IN_DURATION = 500; // milliseconds
 const easeOutCubic = (t: number): number => {
@@ -16,6 +17,8 @@ export class Block {
     private blockBody?: Body;
 
     private creationTime: number = performance.now();
+
+    public spawnPowerUp: Signal<[]> = new Signal<[]>();
 
     private _x: number;
     public get x(): number {
@@ -99,7 +102,9 @@ export class Block {
             friction: 0.0,
             density: 1.0,
             userData: this,
+            filterCategoryBits: 0b10
         });
+        this.blockBody.setAwake(false);
     }
 
     /**
@@ -125,5 +130,10 @@ export class Block {
         if(!this.blockBody) return;
 
         world.destroyBody(this.blockBody);
+
+        // Could use a dynamic scale for balanceing
+        // if(Math.random() < 0.3) {
+        this.spawnPowerUp.emit();
+        // }
     }
 }

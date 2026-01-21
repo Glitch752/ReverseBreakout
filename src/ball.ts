@@ -2,6 +2,8 @@ import { Circle, Body, World, Fixture, Contact, Vec2 } from "planck";
 import { Block } from "./block";
 import { Paddle } from "./paddle";
 import type { Particles } from "./particles";
+import { PowerUp } from "./powerUp";
+import type { Stats } from "./stats";
 
 export class Ball {
     public static readonly MIN_BALL_VELOCITY = 0.7;
@@ -97,7 +99,7 @@ export class Ball {
             density: 1.0,
             restitution: 1.0,
             friction: 0.0,
-            userData: this,
+            userData: this
         });
         this.ballBody.setLinearDamping(0.0);
         this.ballBody.setAngularDamping(0.0);
@@ -107,7 +109,7 @@ export class Ball {
         return this.destroyed;
     }
     
-    public handleCollision(contact: Contact, otherFixture: Fixture, particles: Particles) {
+    public handleCollision(contact: Contact, otherFixture: Fixture, particles: Particles, stats: Stats) {
         if(!this.ballBody) return;
         
         const otherUserData = otherFixture.getUserData();
@@ -152,8 +154,22 @@ export class Ball {
                 otherUserData.outlineColor
             );
         }
-        
-        contact.setEnabled(false);
+
+        if(otherUserData instanceof PowerUp) {
+            // Collect the power-up
+            stats.addAbility(otherUserData.type);
+            otherUserData.isDestroyed = true;
+            particles.emitCircleBurst(
+                otherUserData.position.x,
+                otherUserData.position.y,
+                otherUserData.radius,
+                30,
+                0.2,
+                0.5,
+                otherUserData.color
+            );
+            return;
+        }
         
         // As velocity increases, we decrease restitution to balance extreme speeds a bit
         let restitution = 1.0 - (this.velocity.length() - Ball.MIN_BALL_VELOCITY) / (Ball.MAX_BALL_VELOCITY - Ball.MIN_BALL_VELOCITY) * 0.3;

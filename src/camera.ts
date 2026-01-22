@@ -17,6 +17,13 @@ export class Camera {
         ctx.scale(screenScale * this.zoom, screenScale * this.zoom);
     }
 
+    public projectToWorld(screenX: number, screenY: number, canvas: HTMLCanvasElement): { x: number, y: number } {
+        const screenScale = Math.min(canvas.width / this.minimumScreenDimensions[0], canvas.height / this.minimumScreenDimensions[1]);
+        const worldX = (screenX - canvas.width / 2) / (screenScale * this.zoom) + this.x;
+        const worldY = (screenY - canvas.height / 2) / (screenScale * this.zoom) + this.y;
+        return { x: worldX, y: worldY };
+    }
+
     public trackBalls(balls: Ball[], gameOver: boolean, deltaTime: number) {
         if(balls.length === 0 || gameOver) {
             // Slowly return to center to show arena

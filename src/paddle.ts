@@ -26,7 +26,7 @@ class PIDController {
 export class Paddle {
     private outlineColor: string = 'white';
 
-    private maxSpeed: number = 0.5; // units per second
+    private maxSpeed: number = 0.8; // units per second
     private velocity: number = 0.0;
     private pidController: PIDController = new PIDController(6.0, 0.05, 0.05);
 
@@ -34,7 +34,16 @@ export class Paddle {
 
     private paddleBody: Body | null = null;
 
-    constructor(public centerX: number, public y: number, public width: number, public height: number) {
+    public width: number;
+    private previousWidth: number = 0;
+
+    constructor(public centerX: number, public y: number, private baseWidth: number, public height: number) {
+        this.width = baseWidth;
+    }
+
+    public widen() {
+        this.width += 0.2;
+        if(this.width > 16 / 9) this.width = 16 / 9;
     }
 
     /**
@@ -93,6 +102,10 @@ export class Paddle {
      * Update the paddle based on its AI mode.
      */
     public update(deltaTime: number, balls: Ball[]) {
+        // Slowly return to base width
+        const easeFactor = 1.0 - Math.pow(0.8, deltaTime);
+        this.width += (this.baseWidth - this.width) * easeFactor;
+
         // Clamp to arena bounds
         const arenaHalfWidth = 0.5 * 16 / 9;
 
@@ -172,9 +185,21 @@ export class Paddle {
 
         this.centerX += this.velocity * deltaTime;
 
-        // Update paddle body position
+        // Update paddle body position and width
         if(this.paddleBody) {
             this.paddleBody.setPosition({ x: this.centerX, y: this.y + this.height / 2 });
+    
+            // Update the paddle shape
+            if(Math.abs(this.width - this.previousWidth) < 0.0001) return;
+            this.previousWidth = this.width;
+
+            this.paddleBody.destroyFixture(this.paddleBody.getFixtureList()!);
+            this.paddleBody.createFixture({
+                shape: new Box(this.width / 2, this.height / 2, { x: 0, y: 0 }, 0),
+                friction: 0.0,
+                density: 1.0,
+                userData: this
+            });
         }
     }
 }

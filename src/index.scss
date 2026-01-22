@@ -224,6 +224,12 @@ canvas {
         flex-direction: row;
         gap: 10px;
 
+        &.inactive .ability {
+            opacity: 0.4 !important;
+            pointer-events: none !important;
+            filter: grayscale(70%) !important;
+        }
+
         .ability {
             background-color: #111;
             cursor: pointer;

@@ -3,7 +3,6 @@ import { Block } from "./block";
 import { Paddle } from "./paddle";
 import type { Particles } from "./particles";
 import { PowerUp } from "./powerUp";
-import type { Stats } from "./stats";
 
 export class Ball {
     public static readonly MIN_BALL_VELOCITY = 0.7;
@@ -21,6 +20,17 @@ export class Ball {
         velVec.normalize();
         velVec.mul(Ball.MIN_BALL_VELOCITY);
         this.initialVelocity = { x: velVec.x, y: velVec.y };
+    }
+
+    public cloneWithAngleOffset(angleOffset: number): Ball {
+        const speed = Math.sqrt(this.initialVelocity.x * this.initialVelocity.x + this.initialVelocity.y * this.initialVelocity.y);
+        const currentAngle = Math.atan2(this.initialVelocity.y, this.initialVelocity.x);
+        const newAngle = currentAngle + angleOffset;
+        const newVelocity = {
+            x: Math.cos(newAngle) * speed,
+            y: Math.sin(newAngle) * speed
+        };
+        return new Ball(this.position, newVelocity, this.radius);
     }
     
     /**

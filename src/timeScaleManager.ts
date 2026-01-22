@@ -37,6 +37,7 @@ export class TimeScaleManager {
     private gameRunningRate: SlewableNumber = new SlewableNumber(1.0, 2.0);
     private slowMotionRate: SlewableNumber = new SlewableNumber(1.0, 2.0);
     private uiHintRate: SlewableNumber = new SlewableNumber(1.0, 2.0);
+    private pointSelectionRate: SlewableNumber = new SlewableNumber(1.0, 3.0);
 
     public get slowMotionEase(): number {
         return ease(this.slowMotionRate.value);
@@ -45,12 +46,14 @@ export class TimeScaleManager {
         return ease(this.uiHintRate.value);
     }
 
-    public update(deltaTime: number, gameRunning: boolean) {
+    public update(deltaTime: number, gameRunning: boolean, pointSelectionActive: boolean) {
         this.gameRunningRate.setTarget(gameRunning ? 1.0 : 0.0);
+        this.pointSelectionRate.setTarget(pointSelectionActive ? 0.05 : 1.0);
 
         this.gameRunningRate.update(deltaTime);
         this.slowMotionRate.update(deltaTime);
         this.uiHintRate.update(deltaTime);
+        this.pointSelectionRate.update(deltaTime);
 
         this.timeScale = ease(this.gameRunningRate.value) * ease(this.slowMotionRate.value) * ease(this.uiHintRate.value);
     }

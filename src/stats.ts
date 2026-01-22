@@ -2,7 +2,7 @@ import { Signal } from "./signal";
 
 // Intentionally not persisted in browser storage but persisted across game runs
 const seenAbilities: Set<string> = new Set();
-const ABILITY_HINT_DURATION = 3.0;
+const ABILITY_HINT_DURATION = 4.0;
 
 export class Stats {
     public energy: number = 1;
@@ -120,6 +120,12 @@ export class Stats {
     }
 
     public checkAbilityBind(key: string) {
+        if(this.abilityHintTime > 0) {
+            // If any keys are pressed while the hint is shown, skip the hint
+            this.abilityHintTime = 0.01;
+            return;
+        }
+
         for(const [id, ability] of this.abilities) {
             if(ability.bind.toLowerCase() === key.toLowerCase() && ability.count > 0 && ability.currentCooldown <= 0) {
                 ability.count -= 1;
@@ -229,7 +235,7 @@ export class Stats {
         // Update ability cooldowns
         for(const [_id, ability] of this.abilities) {
             if(ability.currentCooldown > 0) {
-                ability.currentCooldown -= realDeltaTime;
+                ability.currentCooldown -= deltaTime;
                 if(ability.currentCooldown < 0) ability.currentCooldown = 0;
 
                 const cooldownFraction = ability.currentCooldown / ability.useColdown;

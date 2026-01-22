@@ -161,6 +161,9 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keyup', (event) => {
     if(game) game.onKeyUp(event);
 });
+document.addEventListener('mousedown', (event) => {
+    if(game) game.onMouseDown(event);
+});
 
 function showMenu() {
     game = null;
@@ -168,6 +171,11 @@ function showMenu() {
     document.querySelectorAll<HTMLElement>('[data-game-ui]').forEach((el) => {
         el.style.display = 'none';
     });
+}
+
+enum PointSelectionType {
+    SlingshotAnchor,
+    TeleportTarget
 }
 
 class Game {
@@ -189,6 +197,8 @@ class Game {
     private gameRunning: boolean = true;
 
     private timeScaleManager: TimeScaleManager = new TimeScaleManager();
+
+    private pointSelection: [PointSelectionType, ((x: number, y: number) => void)] | null = null;
 
     constructor() {
         this.world.on("pre-solve", (contact) => {
@@ -236,6 +246,7 @@ class Game {
             shape: this.level.getBorders(),
             restitution: 1.0,
             friction: 0.0,
+            filterCategoryBits: 0b100
         });
 
         this.level.initBlocksInWorld(this.world);
@@ -277,6 +288,32 @@ class Game {
                         this.timeScaleManager.setSlowMotion(false);
                     }, this.stats.getAbilityCooldown(abilityId) * 1000 - 500);
                     break;
+                case 'widen':
+                    this.paddle.widen();
+                    break;
+                case 'split':
+                    const newBalls: Ball[] = [];
+                    const newAngleOffset = Math.PI / 12;
+                    for(const ball of this.balls) {
+                        // Usually wouldn't happen, but we hard limit the number of balls to avoid performance issues
+                        if(newBalls.length + this.balls.length >= 150) break;
+                        if(ball.isDestroyed()) continue;
+                        const splitBalls = [
+                            ball.cloneWithAngleOffset(-newAngleOffset),
+                            ball.cloneWithAngleOffset(newAngleOffset)
+                        ];
+                        for(const splitBall of splitBalls) {
+                            splitBall.addToWorld(this.world);
+                            newBalls.push(splitBall);
+                        }
+                    }
+                    this.balls.push(...newBalls);
+                    break;
+                case 'slingshot':
+                    this.pointSelection = [PointSelectionType.SlingshotAnchor, () => {
+                        alert("TODO slingshot")
+                    }];
+                    break;
             }
         });
 
@@ -290,20 +327,39 @@ class Game {
     public onKeyDown(event: KeyboardEvent) {
         if(event.repeat) return;
 
-        if(event.code === 'Escape') {
+        if(!this.gameRunning && event.code === 'Escape') {
             showMenu();
             return;
         }
-
         if(!this.gameRunning) return;
 
         this.keysPressed.add(event.code);
+
+        if(this.pointSelection) {
+            const [_, callback] = this.pointSelection;
+            const worldPos = this.camera.projectToWorld(lastMouseX, lastMouseY, canvas);
+            callback(worldPos.x, worldPos.y);
+            this.pointSelection = null;
+            return;
+        }
 
         this.stats.checkAbilityBind(event.code);
     }
 
     public onKeyUp(event: KeyboardEvent) {
         this.keysPressed.delete(event.code);
+    }
+
+    public onMouseDown(event: MouseEvent) {
+        if(!this.gameRunning) return;
+
+        if(this.pointSelection) {
+            const [_, callback] = this.pointSelection;
+            const worldPos = this.camera.projectToWorld(event.clientX, event.clientY, canvas);
+            callback(worldPos.x, worldPos.y);
+            this.pointSelection = null;
+            return;
+        }
     }
     
     /**
@@ -317,7 +373,7 @@ class Game {
         this.camera.trackBalls(this.balls, !this.gameRunning, deltaTime);
 
         // Update time scale manager
-        this.timeScaleManager.update(deltaTime, this.gameRunning);
+        this.timeScaleManager.update(deltaTime, this.gameRunning, this.pointSelection !== null);
         deltaTime *= this.timeScaleManager.timeScale;
 
         if(deltaTime <= 1e-7) return;
@@ -407,6 +463,36 @@ class Game {
             ball.draw(ctx);
         }
 
+        if(this.pointSelection) {
+            const [selectionType, _] = this.pointSelection;
+            const worldPos = this.camera.projectToWorld(lastMouseX, lastMouseY, canvas);
+            switch(selectionType) {
+                case PointSelectionType.SlingshotAnchor:
+                    // Draw a line from every ball to the mouse position
+                    for(const ball of this.balls) {
+                        if(ball.isDestroyed()) continue;
+                        const ballPos = ball.position;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.lineWidth = 0.002;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(ballPos.x, ballPos.y);
+                        ctx.lineTo(worldPos.x, worldPos.y);
+                        ctx.stroke();
+                    }
+                    break;
+                case PointSelectionType.TeleportTarget:
+                    // Draw a circle at the target position
+                    ctx.strokeStyle = 'rgba(50, 200, 255, 0.7)';
+                    ctx.lineWidth = 0.003;
+
+                    ctx.beginPath();
+                    ctx.arc(worldPos.x, worldPos.y, 0.02, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+            }
+        }
+
         this.paddle.draw(ctx);
     }
 
@@ -448,8 +534,8 @@ class Game {
 
         // Apply a canvas filter based on slow motion
         const slowMotionEase = this.timeScaleManager.slowMotionEase;
-        const uiHintEase = this.timeScaleManager.uiHintEase;
-        shader.setUniform1f('filter_amount', (1.0 - slowMotionEase) * (1.0 - uiHintEase));
+        const uiHintEase = this.timeScaleManager.uiHintEase * 0.5 + 0.5;
+        shader.setUniform1f('filter_amount', 1.0 - (slowMotionEase * uiHintEase));
         shader.render();
     }
 }

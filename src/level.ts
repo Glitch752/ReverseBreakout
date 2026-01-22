@@ -69,13 +69,20 @@ export class Level {
     }
 
     public update(world: World, deltaTime: number) {
-        // Slowly move blocks down over time
-        this.blockOffsetY += this.layerMovementSpeed * deltaTime;
-
         this.hitDifficulty += 0.01 * deltaTime;
         this.layerMovementSpeed += 0.0001 * deltaTime;
 
-        let lowestBlockY = 0;
+        let effectiveLayerMovementSpeed = this.layerMovementSpeed;
+        
+        // If there are no more blocks, add layers quickly
+        if(this.lowestBlockY < -0.4) {
+            effectiveLayerMovementSpeed *= 10;
+        }
+
+        // Slowly move blocks down over time
+        this.blockOffsetY += effectiveLayerMovementSpeed * deltaTime;
+
+        let lowestBlockY = -Infinity;
 
         // Remove destroyed blocks
         for(let i = this.blocks.length - 1; i >= 0; i--) {
@@ -85,7 +92,7 @@ export class Level {
                 this.blocks.splice(i, 1);
             }
             
-            block.y += this.layerMovementSpeed * deltaTime;
+            block.y += effectiveLayerMovementSpeed * deltaTime;
             
             const blockY = block.y + block.height;
             if(blockY > lowestBlockY) {
@@ -99,6 +106,7 @@ export class Level {
         if(this.blockOffsetY >= BLOCK_LAYER_HEIGHT) {
             this.blockOffsetY -= BLOCK_LAYER_HEIGHT;
             this.addedBlockLayers++;
+            let layersOnCreation = this.addedBlockLayers;
 
             for(let x = 0; x < BLOCKS_X; x++) {
                 const hue = this.addedBlockLayers * -60;
@@ -106,7 +114,7 @@ export class Level {
                 setTimeout(() => {
                     const block = new Block(
                         x * BLOCK_LAYER_WIDTH + BLOCK_PADDING - INITIAL_ARENA_ASPECT_RATIO / 2,
-                        -BLOCK_LAYER_HEIGHT + BLOCK_PADDING - 0.5 + this.blockOffsetY,
+                        -BLOCK_LAYER_HEIGHT + BLOCK_PADDING - 0.5 + this.blockOffsetY + (this.addedBlockLayers - layersOnCreation) * BLOCK_LAYER_HEIGHT,
                         BLOCK_LAYER_WIDTH - BLOCK_PADDING * 2,
                         BLOCK_LAYER_HEIGHT - BLOCK_PADDING * 2,
                         hits, hue,
@@ -186,8 +194,8 @@ export class Level {
         });
         deathBody.createFixture({
             shape: new Chain([
-                new Vec2(-INITIAL_ARENA_ASPECT_RATIO / 2, 0),
-                new Vec2(INITIAL_ARENA_ASPECT_RATIO / 2, 0),
+                new Vec2(-2, 0),
+                new Vec2(2, 0),
             ], false),
             userData: 'death',
             isSensor: true

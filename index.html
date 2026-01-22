@@ -39,14 +39,14 @@
                 </div>
             </div>
         </div> -->
-        <div class="abilities">
+        <div class="abilities inactive">
             <div class="new-ability-hint ability-hint" style="--ability-hue: 0deg" id="abilityHint">
                 <span class="title">New ability unlocked!</span>
                 <h1 id="new-ability-hint-name">Ability name</h1>
                 <span id="new-ability-hint-description">Description</span>
             </div>
 
-            <div class="ability" data-ability="split" data-bind="Digit1" style="--ability-hue: 90deg" data-ability-probability="0.6">
+            <div class="ability" data-ability="split" data-bind="Digit1" style="--ability-hue: 90deg" data-ability-probability="0.6" data-ability-cooldown="5">
                 <span class="count">x1</span>
                 <pre class="keybind">1</pre>
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-1.45 0-2.475-1.025T8.5 18.5t1.025-2.475T12 15t2.475 1.025T15.5 18.5t-1.025 2.475T12 22m0-13q-1.45 0-2.475-1.025T8.5 5.5t1.025-2.475T12 2t2.475 1.025T15.5 5.5t-1.025 2.475T12 9m0-2q.625 0 1.063-.437T13.5 5.5t-.437-1.062T12 4t-1.062.438T10.5 5.5t.438 1.063T12 7m-6.5 8.5q-1.45 0-2.475-1.025T2 12t1.025-2.475T5.5 8.5t2.475 1.025T9 12t-1.025 2.475T5.5 15.5m0-2q.625 0 1.063-.437T7 12t-.437-1.062T5.5 10.5t-1.062.438T4 12t.438 1.063T5.5 13.5m13 2q-1.45 0-2.475-1.025T15 12t1.025-2.475T18.5 8.5t2.475 1.025T22 12t-1.025 2.475T18.5 15.5m0-2q.625 0 1.063-.437T20 12t-.437-1.062T18.5 10.5t-1.062.438T17 12t.438 1.063t1.062.437"/></svg>
@@ -79,7 +79,7 @@
                 </div>
             </div>
             
-            <div class="ability" data-ability="widen" data-bind="Digit4" style="--ability-hue: 230deg" data-ability-probability="1">
+            <div class="ability" data-ability="widen" data-bind="Digit4" style="--ability-hue: 230deg" data-ability-probability="1" data-ability-cooldown="0.5">
                 <span class="count">x1</span>
                 <pre class="keybind">4</pre>
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zM20 6H4v12h16zM4 6v12zm5 7.8v-3.6q0-.35-.3-.475t-.55.125L6.7 11.3q-.3.3-.3.7t.3.7l1.45 1.45q.25.25.55.125T9 13.8m8.3-2.5l-1.45-1.45q-.25-.25-.55-.125t-.3.475v3.6q0 .35.3.475t.55-.125l1.45-1.45q.3-.3.3-.7t-.3-.7"/></svg>
@@ -112,7 +112,7 @@
                 </div>
             </div>
             
-            <div class="ability" data-ability="slowmotion" data-bind="Digit7" style="--ability-hue: 150deg" data-ability-probability="0.5" data-ability-cooldown="5">
+            <div class="ability" data-ability="slowmotion" data-bind="Digit7" style="--ability-hue: 150deg" data-ability-probability="0.5" data-ability-cooldown="8">
                 <span class="count">x1</span>
                 <pre class="keybind">7</pre>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 20h8v-3q0-1.65-1.175-2.825T12 13t-2.825 1.175T8 17zm4-9q1.65 0 2.825-1.175T16 7V4H8v3q0 1.65 1.175 2.825T12 11M5 22q-.425 0-.712-.288T4 21t.288-.712T5 20h1v-3q0-1.525.713-2.863T8.7 12q-1.275-.8-1.987-2.137T6 7V4H5q-.425 0-.712-.288T4 3t.288-.712T5 2h14q.425 0 .713.288T20 3t-.288.713T19 4h-1v3q0 1.525-.712 2.863T15.3 12q1.275.8 1.988 2.138T18 17v3h1q.425 0 .713.288T20 21t-.288.713T19 22z"/></svg>

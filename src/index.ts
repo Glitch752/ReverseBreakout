@@ -6,6 +6,7 @@ import { Ball } from './ball';
 import { Camera } from './camera';
 import { Level } from './level';
 import { Paddle } from './paddle';
+import { Block } from './block';
 import { Particles } from './particles';
 import { Stats } from './stats';
 import { PowerUp } from './powerUp';
@@ -198,7 +199,11 @@ class Game {
 
     private timeScaleManager: TimeScaleManager = new TimeScaleManager();
 
-    private pointSelection: [PointSelectionType, ((x: number, y: number) => void)] | null = null;
+    private pointSelection: {
+        type: PointSelectionType,
+        callback: ((x: number, y: number) => void),
+        startTime: number
+    } | null = null;
 
     constructor() {
         this.world.on("pre-solve", (contact) => {
@@ -210,6 +215,13 @@ class Game {
 
             if((userDataA instanceof PowerUp && userDataB instanceof Ball) ||
                 (userDataB instanceof PowerUp && userDataA instanceof Ball)) {
+                contact.setEnabled(false);
+            }
+
+            if(
+                (userDataA instanceof Ball && userDataA.isGhost()) ||
+                (userDataB instanceof Ball && userDataB.isGhost())
+            ) {
                 contact.setEnabled(false);
             }
         })
@@ -310,9 +322,83 @@ class Game {
                     this.balls.push(...newBalls);
                     break;
                 case 'slingshot':
-                    this.pointSelection = [PointSelectionType.SlingshotAnchor, () => {
-                        alert("TODO slingshot")
-                    }];
+                    this.pointSelection = {
+                        type: PointSelectionType.SlingshotAnchor,
+                        callback: (x, y) => {
+                            for(const ball of this.balls) {
+                                if(ball.isDestroyed()) continue;
+                                const ballPos = ball.position;
+                                const dirX = x - ballPos.x;
+                                const dirY = y - ballPos.y;
+                                const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
+                                if(dirLength > 0) {
+                                    const slingshotStrength = 0.1;
+                                    const impulseX = dirX / dirLength * slingshotStrength;
+                                    const impulseY = dirY / dirLength * slingshotStrength;
+                                    ball.slingshot(impulseX, impulseY);
+                                    this.particles.emitLineBurst(
+                                        ballPos.x, ballPos.y,
+                                        x, y,
+                                        100,
+                                        0.9,
+                                        0.6,
+                                        '#ff89ff',
+                                        0.5
+                                    );
+                                }
+                            }
+                        },
+                        startTime: performance.now()
+                    };
+                    break;
+                case 'teleport':
+                    this.pointSelection = {
+                        type: PointSelectionType.TeleportTarget,
+                        callback: (x, y) => {
+                            for(const ball of this.balls) {
+                                if(ball.isDestroyed()) continue;
+                                this.particles.emitLineBurst(
+                                    ball.position.x, ball.position.y,
+                                    x, y,
+                                    30,
+                                    0.1,
+                                    0.9,
+                                    '#89ffff',
+                                    0.9
+                                );
+                                ball.teleportTo(x + ball.velocity.x * 0.01, y + ball.velocity.y * 0.01);
+                            }
+                        },
+                        startTime: performance.now()
+                    };
+                    break;
+                case 'ghost':
+                    for(const ball of this.balls) {
+                        if(ball.isDestroyed()) continue;
+                        ball.setGhostMode(this.stats.getAbilityCooldown(abilityId) / 2.0);
+                    }
+                    break;
+                case 'laser':
+                    for(const ball of this.balls) {
+                        if(ball.isDestroyed()) continue;
+                        // Emit a raycast in 4 directions
+                        const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
+                        const ballPos = ball.position;
+                        for(const dir of dirs) {
+                            const rayLength = 5.0;
+                            const endX = ballPos.x + dir.x * rayLength;
+                            const endY = ballPos.y + dir.y * rayLength;
+                            this.world.rayCast(ballPos, { x: endX, y: endY }, (fixture, point, normal, fraction) => {
+                                const userData = fixture.getUserData();
+                                if(userData instanceof Block) {
+                                    userData.hit(this.particles);
+                                    // Stop the raycast at the first block hit
+                                    return 0;
+                                }
+                                return 1;
+                            });
+                        }
+                    }
                     break;
             }
         });
@@ -336,9 +422,10 @@ class Game {
         this.keysPressed.add(event.code);
 
         if(this.pointSelection) {
-            const [_, callback] = this.pointSelection;
+            if(performance.now() - this.pointSelection.startTime < 200) return; // Prevent likely-accidental immediate selection
+
             const worldPos = this.camera.projectToWorld(lastMouseX, lastMouseY, canvas);
-            callback(worldPos.x, worldPos.y);
+            this.pointSelection.callback(worldPos.x, worldPos.y);
             this.pointSelection = null;
             return;
         }
@@ -354,13 +441,16 @@ class Game {
         if(!this.gameRunning) return;
 
         if(this.pointSelection) {
-            const [_, callback] = this.pointSelection;
+            if(performance.now() - this.pointSelection.startTime < 100) return; // Prevent likely-accidental immediate selection
+
             const worldPos = this.camera.projectToWorld(event.clientX, event.clientY, canvas);
-            callback(worldPos.x, worldPos.y);
+            this.pointSelection.callback(worldPos.x, worldPos.y);
             this.pointSelection = null;
             return;
         }
     }
+
+    private hadPointSelectionLastFrame: boolean = false;
     
     /**
      * @param deltaTime Delta time in seconds
@@ -370,7 +460,12 @@ class Game {
             this.gameOver();
         }
 
-        this.camera.trackBalls(this.balls, !this.gameRunning, deltaTime);
+        if((this.pointSelection !== null) !== this.hadPointSelectionLastFrame) {
+            this.hadPointSelectionLastFrame = this.pointSelection !== null;
+            document.getElementById("abilities")!.classList.toggle("inactive", this.pointSelection !== null);
+        }
+
+        this.camera.trackBalls(this.balls, deltaTime, !this.gameRunning, this.pointSelection !== null);
 
         // Update time scale manager
         this.timeScaleManager.update(deltaTime, this.gameRunning, this.pointSelection !== null);
@@ -464,7 +559,7 @@ class Game {
         }
 
         if(this.pointSelection) {
-            const [selectionType, _] = this.pointSelection;
+            const { type: selectionType } = this.pointSelection;
             const worldPos = this.camera.projectToWorld(lastMouseX, lastMouseY, canvas);
             switch(selectionType) {
                 case PointSelectionType.SlingshotAnchor:
@@ -472,13 +567,24 @@ class Game {
                     for(const ball of this.balls) {
                         if(ball.isDestroyed()) continue;
                         const ballPos = ball.position;
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.lineWidth = 0.002;
+                        ctx.strokeStyle = 'rgba(255, 137, 255, 0.75)';
+                        ctx.lineWidth = 0.003;
+                        ctx.setLineDash([0.01, 0.01]);
+
+                        // Move the start position toward the target
+                        const dirX = worldPos.x - ballPos.x;
+                        const dirY = worldPos.y - ballPos.y;
+                        const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
+                        
+                        const startX = ballPos.x + (dirLength > 0 ? dirX / dirLength * ball.radius : 0);
+                        const startY = ballPos.y + (dirLength > 0 ? dirY / dirLength * ball.radius : 0);
                         
                         ctx.beginPath();
-                        ctx.moveTo(ballPos.x, ballPos.y);
-                        ctx.lineTo(worldPos.x, worldPos.y);
+                        ctx.moveTo(worldPos.x, worldPos.y);
+                        ctx.lineTo(startX, startY);
                         ctx.stroke();
+
+                        ctx.setLineDash([]);
                     }
                     break;
                 case PointSelectionType.TeleportTarget:
@@ -487,8 +593,23 @@ class Game {
                     ctx.lineWidth = 0.003;
 
                     ctx.beginPath();
-                    ctx.arc(worldPos.x, worldPos.y, 0.02, 0, Math.PI * 2);
+                    ctx.arc(worldPos.x, worldPos.y, 0.015, 0, Math.PI * 2);
                     ctx.stroke();
+
+                    for(const ball of this.balls) {
+                        if(ball.isDestroyed()) continue;
+                        const ballPos = ball.position;
+                        ctx.strokeStyle = 'rgba(50, 200, 255, 0.3)';
+                        ctx.lineWidth = 0.0025;
+                        ctx.setLineDash([0.01, 0.01]);
+
+                        ctx.beginPath();
+                        ctx.moveTo(worldPos.x, worldPos.y);
+                        ctx.lineTo(ballPos.x, ballPos.y);
+                        ctx.stroke();
+
+                        ctx.setLineDash([]);
+                    }
                     break;
             }
         }

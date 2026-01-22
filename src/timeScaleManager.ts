@@ -48,14 +48,14 @@ export class TimeScaleManager {
 
     public update(deltaTime: number, gameRunning: boolean, pointSelectionActive: boolean) {
         this.gameRunningRate.setTarget(gameRunning ? 1.0 : 0.0);
-        this.pointSelectionRate.setTarget(pointSelectionActive ? 0.05 : 1.0);
+        this.pointSelectionRate.setTarget(pointSelectionActive && gameRunning ? 0.03 : 1.0);
 
         this.gameRunningRate.update(deltaTime);
         this.slowMotionRate.update(deltaTime);
         this.uiHintRate.update(deltaTime);
         this.pointSelectionRate.update(deltaTime);
 
-        this.timeScale = ease(this.gameRunningRate.value) * ease(this.slowMotionRate.value) * ease(this.uiHintRate.value);
+        this.timeScale = ease(this.gameRunningRate.value) * ease(this.slowMotionRate.value) * ease(this.uiHintRate.value) * this.pointSelectionRate.value;
     }
 
     public setSlowMotion(active: boolean) {

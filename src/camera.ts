@@ -6,28 +6,30 @@ export class Camera {
     constructor(public x: number, public y: number, public zoom: number) {
     }
 
+    private getScreenScale(canvas: HTMLCanvasElement): number {
+        return Math.min(canvas.width / this.minimumScreenDimensions[0], canvas.height / this.minimumScreenDimensions[1]);
+    }
+
     public applyTransform(ctx: CanvasRenderingContext2D) {
         const canvas = ctx.canvas;
-        
-        const screenScale = Math.min(canvas.width / this.minimumScreenDimensions[0], canvas.height / this.minimumScreenDimensions[1]);
+        const screenScale = this.getScreenScale(canvas);
 
         // Translate according to camera
         ctx.translate(-this.x * screenScale + canvas.width / 2, -this.y * screenScale + canvas.height / 2);
-        
         ctx.scale(screenScale * this.zoom, screenScale * this.zoom);
     }
 
     public projectToWorld(screenX: number, screenY: number, canvas: HTMLCanvasElement): { x: number, y: number } {
-        const screenScale = Math.min(canvas.width / this.minimumScreenDimensions[0], canvas.height / this.minimumScreenDimensions[1]);
-        const worldX = (screenX - canvas.width / 2) / (screenScale * this.zoom) + this.x;
-        const worldY = (screenY - canvas.height / 2) / (screenScale * this.zoom) + this.y;
+        const screenScale = this.getScreenScale(canvas);
+        const worldX = (screenX - canvas.width / 2) / (screenScale * this.zoom) + this.x / this.zoom;
+        const worldY = (screenY - canvas.height / 2) / (screenScale * this.zoom) + this.y / this.zoom;
         return { x: worldX, y: worldY };
     }
 
-    public trackBalls(balls: Ball[], gameOver: boolean, deltaTime: number) {
-        if(balls.length === 0 || gameOver) {
+    public trackBalls(balls: Ball[], deltaTime: number, gameOver: boolean, pointSelectionActive: boolean) {
+        if(balls.length === 0 || gameOver || pointSelectionActive) {
             // Slowly return to center to show arena
-            const lerpFactor = 1 - Math.pow(0.6, deltaTime);
+            const lerpFactor = 1 - Math.pow((pointSelectionActive && !gameOver) ? 0.01 : 0.6, deltaTime);
             this.x += (0 - this.x) * lerpFactor;
             this.y += (0 - this.y) * lerpFactor;
             this.zoom += (0.8 - this.zoom) * lerpFactor;

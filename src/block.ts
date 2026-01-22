@@ -1,5 +1,6 @@
 import { Box, World, Body } from "planck";
 import { Signal } from "./signal";
+import type { Particles } from "./particles";
 
 const BLOCK_FADE_IN_DURATION = 500; // milliseconds
 const easeOutCubic = (t: number): number => {
@@ -111,8 +112,21 @@ export class Block {
      * Called when this block is hit by the ball.
      * Returns true if the block is destroyed.
      */
-    public hit(): boolean {
+    public hit(particles: Particles): boolean {
         this.hitsRemaining--;
+
+        if(this.hitsRemaining <= 0) {
+            // Block was destroyed
+            particles.emitRectBurst(
+                this.x, this.y,
+                this.width, this.height,
+                50,
+                0.2,
+                0.5,
+                this.outlineColor
+            );
+        }
+
         return this.hitsRemaining <= 0;
     }
 

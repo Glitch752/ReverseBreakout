@@ -68,6 +68,33 @@ export class Particles {
     }
 
     /**
+     * Emit a burst of particles along a line segment.
+     */
+    public emitLineBurst(x1: number, y1: number, x2: number, y2: number, countPerLength: number, speed: number, lifetime: number, colorString: string, biasVelocityTowardEnd: number = 0) {
+        const color = getColorComponents(colorString);
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const count = Math.floor(length * countPerLength);
+        const normDx = dx / length;
+        const normDy = dy / length;
+        const lineAngle = Math.atan2(dy, dx) + Math.PI;
+
+        for(let i = 0; i < count; i++) {
+            const t = Math.random();
+            const px = x1 + normDx * length * t;
+            const py = y1 + normDy * length * t;
+
+            const velocityMagnitude = (Math.random() - 0.5) * speed;
+            const angle = lineAngle + (Math.random() - 0.5) * Math.PI * (1.0 - biasVelocityTowardEnd);
+            const vx = Math.cos(angle) * velocityMagnitude;
+            const vy = Math.sin(angle) * velocityMagnitude;
+
+            this.emit(px, py, vx, vy, lifetime * (0.5 + Math.random() * 0.5), this.randomizeColor(color, 0.1));
+        }
+    }
+
+    /**
      * Emit a burst of particles in a circle.
      */
     public emitCircleBurst(x: number, y: number, radius: number, count: number, speed: number, lifetime: number, colorString: string) {

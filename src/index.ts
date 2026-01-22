@@ -12,6 +12,8 @@ import { Stats } from './stats';
 import { PowerUp } from './powerUp';
 import { TimeScaleManager } from './timeScaleManager';
 
+// TODO: Sounds blegh
+
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
     fragment: bloomFragmentShader
@@ -39,6 +41,8 @@ function draw(time: number) {
     if(lastTime === null) lastTime = time - 16;
     const deltaTime = Math.min((time - lastTime) / 1000, 1 / 20);
     lastTime = time;
+
+    requestAnimationFrame(draw);
 
     if(game) {
         game.draw(deltaTime);
@@ -138,8 +142,6 @@ function draw(time: number) {
 
         shader.render();
     }
-
-    requestAnimationFrame(draw);
 }
 
 requestAnimationFrame(draw);
@@ -152,9 +154,6 @@ function startGame() {
     }
 }
 document.getElementById("startButton")!.addEventListener("click", startGame);
-
-// TEMPORARY
-setTimeout(startGame, 500);
 
 document.addEventListener('keydown', (event) => {
     if(game) game.onKeyDown(event);
@@ -270,26 +269,45 @@ class Game {
 
         this.level.addDeathBody(this.world);
         
-        // temporary
-        // setInterval(() => {
-        //     this.balls.push(this.level.getInitialBalls()[0]);
-        //     this.balls[this.balls.length - 1].addToWorld(this.world);
-        //     if(this.balls.length > 20) {
-        //         this.balls[0].destroy(this.world);
-        //         this.balls.splice(0, 1);
-        //     }
-        // }, 2000);
-
-        this.camera.minimumScreenDimensions = this.level.minimumScreenDimensions;
+        this.camera.minimumScreenDimensions = this.level.levelDimensions.map(v => v * 1.05) as [number, number];
 
         this.level.spawnPowerUp.connect((pos, vel) => {
-            const ability = this.stats.selectAbility();
-            const powerUp = new PowerUp(pos, vel, ability.id, ability.icon, ability.color);
-            powerUp.collected.connect(() => {
-                this.stats.addAbility(ability.id);
-            });
-            powerUp.addToWorld(this.world);
-            this.powerUps.push(powerUp);
+            const rand = Math.random();
+            if(rand < 0.5) {
+                // Spawn a powerup
+                let powerUp: PowerUp;
+                if(rand < 0.1) {
+                    // Energy
+                    powerUp = new PowerUp(pos, vel, this.stats.energyIcon, true, '#ece8ae');
+                    powerUp.collected.connect(() => {
+                        this.stats.addEnergy(0.2);
+                    });
+                } else if(rand < 0.25) {
+                    // Explodey thingy
+                    powerUp = new PowerUp(pos, vel, this.stats.explodeyIcon, true, '#ff5555');
+                    powerUp.collected.connect((ball) => {
+                        this.particles.emitCircleBurst(
+                            powerUp.position.x, powerUp.position.y,
+                            0.03,
+                            100,
+                            0.6,
+                            0.7,
+                            '#ff5555'
+                        );
+                        // Move the explosion center down a bit for balance - makes it easier to launch balls upward
+                        ball.applyExplosionImpulse(powerUp.position.x, powerUp.position.y + 0.05, 0.001);
+                    });
+                } else {
+                    // Ability
+                    const ability = this.stats.selectAbility();
+                    powerUp = new PowerUp(pos, vel, ability.icon, false, ability.color);
+                    powerUp.collected.connect(() => {
+                        this.stats.addAbility(ability.id);
+                    });
+                }
+                powerUp.addToWorld(this.world);
+                this.powerUps.push(powerUp);
+            }
         });
 
         this.stats.activateAbility.connect((abilityId) => {
@@ -382,21 +400,33 @@ class Game {
                     for(const ball of this.balls) {
                         if(ball.isDestroyed()) continue;
                         // Emit a raycast in 4 directions
-                        const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
+                        const dirs = [
+                            { x: 1, y: 0, len: this.level.levelDimensions[0] / 2 - ball.position.x },
+                            { x: -1, y: 0, len: this.level.levelDimensions[0] / 2 + ball.position.x },
+                            { x: 0, y: 1, len: this.level.levelDimensions[1] / 2 - ball.position.y },
+                            { x: 0, y: -1, len: this.level.levelDimensions[1] / 2 + ball.position.y }
+                        ];
                         const ballPos = ball.position;
                         for(const dir of dirs) {
-                            const rayLength = 5.0;
-                            const endX = ballPos.x + dir.x * rayLength;
-                            const endY = ballPos.y + dir.y * rayLength;
-                            this.world.rayCast(ballPos, { x: endX, y: endY }, (fixture, point, normal, fraction) => {
+                            const endX = ballPos.x + dir.x * dir.len;
+                            const endY = ballPos.y + dir.y * dir.len;
+                            this.world.rayCast(ballPos, { x: endX, y: endY }, (fixture, _point, _normal, _fraction) => {
                                 const userData = fixture.getUserData();
                                 if(userData instanceof Block) {
                                     userData.hit(this.particles);
-                                    // Stop the raycast at the first block hit
-                                    return 0;
                                 }
                                 return 1;
                             });
+
+                            this.particles.emitLineBurst(
+                                ballPos.x, ballPos.y,
+                                endX, endY,
+                                200 / this.balls.length,
+                                0.4,
+                                0.8,
+                                '#f96d4e',
+                                0.7
+                            );
                         }
                     }
                     break;
@@ -485,10 +515,10 @@ class Game {
         if(this.keysPressed.has('ArrowUp') || this.keysPressed.has('KeyW')) yForce -= 1;
         if(this.keysPressed.has('ArrowDown') || this.keysPressed.has('KeyS')) yForce += 1;
 
-        let  length = Math.sqrt(xForce * xForce + yForce * yForce);
-        if(length > 0 && !this.stats.tryTakeEnergy(0.4 * deltaTime)) length = 0;
+        let length = Math.sqrt(xForce * xForce + yForce * yForce);
+        if(length > 0) length /= this.stats.tryTakeEnergy(0.4 * deltaTime);
         
-        if(length > 0) {
+        if(length > 0.01) {
             xForce /= length;
             yForce /= length;
 
@@ -656,7 +686,8 @@ class Game {
         // Apply a canvas filter based on slow motion
         const slowMotionEase = this.timeScaleManager.slowMotionEase;
         const uiHintEase = this.timeScaleManager.uiHintEase * 0.5 + 0.5;
-        shader.setUniform1f('filter_amount', 1.0 - (slowMotionEase * uiHintEase));
+        const gameOverEase = this.timeScaleManager.gameOverEase * 0.5 + 0.5;
+        shader.setUniform1f('filter_amount', 1.0 - (slowMotionEase * uiHintEase * gameOverEase));
         shader.render();
     }
 }

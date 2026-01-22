@@ -171,7 +171,7 @@ export class Ball {
 
         if(otherUserData instanceof PowerUp) {
             // Collect the power-up
-            otherUserData.collect();
+            otherUserData.collect(this);
             particles.emitCircleBurst(
                 otherUserData.position.x,
                 otherUserData.position.y,
@@ -248,6 +248,18 @@ export class Ball {
         this.ballBody.applyForceToCenter(new Vec2(x, y));
     }
     
+    public applyExplosionImpulse(explosionX: number, explosionY: number, force: number) {
+        if(!this.ballBody) return;
+
+        const ballPos = this.ballBody.getPosition();
+        const dir = new Vec2(ballPos.x - explosionX, ballPos.y - explosionY);
+        dir.normalize();
+        dir.mul(force);
+
+        this.ballBody.applyLinearImpulse(dir, this.ballBody.getWorldCenter());
+        this.slingshotted = true;
+    }
+
     public slingshot(x: number, y: number) {
         if(!this.ballBody) return;
 

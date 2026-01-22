@@ -1,7 +1,8 @@
 import { Circle, type Body, type World } from "planck";
 import { Signal } from "./signal";
+import type { Ball } from "./ball";
 
-const POWER_UP_RADIUS = 0.02;
+const POWER_UP_RADIUS = 0.025;
 const FADE_OUT_DURATION = 0.3;
 
 const ease = (t: number): number => {
@@ -14,7 +15,7 @@ export class PowerUp {
     private fadeOut: number = 0;
     public isDestroyed: boolean = false;
 
-    public collected = new Signal<[]>();
+    public collected = new Signal<[Ball]>();
 
     public get position(): { x: number, y: number } {
         if(!this.sensorBody) return { x: 0, y: 0 };
@@ -28,17 +29,13 @@ export class PowerUp {
     constructor(
         private initialPosition: { x: number, y: number },
         private initialVelocity: { x: number, y: number },
-        public type: string,
         private icon: HTMLImageElement,
+        private dashed: boolean,
         public color: string
-    ) {
-        // TODO: more power-up types
-        // - Energy
-        // - Explodey thingy
-    }
+    ) {}
 
-    public collect() {
-        this.collected.emit();
+    public collect(ball: Ball) {
+        this.collected.emit(ball);
         this.isDestroyed = true;
     }
 
@@ -49,7 +46,7 @@ export class PowerUp {
             linearVelocity: this.initialVelocity,
         });
         this.sensorBody.createFixture({
-            shape: new Circle(POWER_UP_RADIUS),
+            shape: new Circle(POWER_UP_RADIUS * 1.5),
             // isSensor: true,
             userData: this,
             filterMaskBits: 0b01
@@ -66,7 +63,7 @@ export class PowerUp {
     public update(deltaTime: number) {
         if(!this.sensorBody) return;
 
-        this.sensorBody.applyForceToCenter({ x: 0, y: 5.0 }, true);
+        this.sensorBody.applyForceToCenter({ x: 0, y: 3.0 }, true);
 
         if(this.sensorBody.getPosition().y - POWER_UP_RADIUS > 0.6) {
             this.fadeOut += deltaTime / FADE_OUT_DURATION;
@@ -88,11 +85,15 @@ export class PowerUp {
             ctx.globalAlpha = startAlpha * (1 - eased);
         }
 
+        if(this.dashed) ctx.setLineDash([0.01, 0.01]);
+
         ctx.strokeStyle = this.color;
         ctx.lineWidth = 0.002;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, POWER_UP_RADIUS, 0, Math.PI * 2);
         ctx.stroke();
+
+        if(this.dashed) ctx.setLineDash([]);
 
         if(this.icon.complete) {
             // Draw the icon in the power-up color

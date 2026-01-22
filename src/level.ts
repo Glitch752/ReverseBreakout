@@ -48,13 +48,13 @@ function wavyRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: nu
 }
 
 export class Level {
-    public minimumScreenDimensions: [number, number] = [INITIAL_ARENA_ASPECT_RATIO * 1.05, 1.05];
+    public levelDimensions: [number, number] = [INITIAL_ARENA_ASPECT_RATIO * 1.05, 1.05];
     private blocks: Block[] = [];
 
     private addedBlockLayers: number = 1;
     private blockOffsetY: number = 0;
 
-    private layerMovementSpeed: number = 0.01; // units per second
+    private layerMovementSpeed: number = 0.002; // units per second
     /** A higher hit difficulty increases the chances that blocks require multiple hits to be destroyed */
     private hitDifficulty: number = 0;
 
@@ -70,7 +70,7 @@ export class Level {
 
     public update(world: World, deltaTime: number) {
         this.hitDifficulty += 0.01 * deltaTime;
-        this.layerMovementSpeed += 0.0001 * deltaTime;
+        this.layerMovementSpeed += 0.00002 * deltaTime;
 
         let effectiveLayerMovementSpeed = this.layerMovementSpeed;
         
@@ -132,7 +132,7 @@ export class Level {
         block.spawnPowerUp.connect(() => {
             const pos = {
                 x: block.x + block.width / 2,
-                y: block.y + block.height / 2
+                y: block.y + block.height / 2 - 0.02
             };
             const vel = {
                 x: (Math.random() - 0.5) * 0.2,

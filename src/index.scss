@@ -403,3 +403,9 @@ canvas {
         }
     }
 }
+
+.game-over {
+    display: block !important; // temporary
+
+    position: absolute;
+}

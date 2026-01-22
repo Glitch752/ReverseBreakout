@@ -78,7 +78,7 @@ export class Particles {
         const count = Math.floor(length * countPerLength);
         const normDx = dx / length;
         const normDy = dy / length;
-        const lineAngle = Math.atan2(dy, dx) + Math.PI;
+        const lineAngle = Math.atan2(dy, dx);
 
         for(let i = 0; i < count; i++) {
             const t = Math.random();

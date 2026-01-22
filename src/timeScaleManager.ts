@@ -45,6 +45,9 @@ export class TimeScaleManager {
     public get uiHintEase(): number {
         return ease(this.uiHintRate.value);
     }
+    public get gameOverEase(): number {
+        return ease(1.0 - this.gameRunningRate.value);
+    }
 
     public update(deltaTime: number, gameRunning: boolean, pointSelectionActive: boolean) {
         this.gameRunningRate.setTarget(gameRunning ? 1.0 : 0.0);

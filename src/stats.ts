@@ -2,6 +2,7 @@ import { Signal } from "./signal";
 
 // Intentionally not persisted in browser storage but persisted across game runs
 const seenAbilities: Set<string> = new Set();
+const ABILITY_HINT_DURATION = 3.0;
 
 export class Stats {
     public energy: number = 1;
@@ -19,10 +20,16 @@ export class Stats {
         styleHue: string,
         count: number,
         icon: HTMLImageElement,
-        element: HTMLElement
+        element: HTMLElement,
+        useColdown: number,
+        currentCooldown: number
     }> = new Map();
 
     public activateAbility = new Signal<[string]>();
+    public abilityHintShown = new Signal<[boolean]>();
+
+    private abilityHintTime: number = 0;
+    private queuedAbilityHints: string[] = [];
 
     constructor() {
         // Query ability elements from the HUD
@@ -35,10 +42,12 @@ export class Stats {
             probability: number,
             styleHue: string,
             icon: HTMLImageElement,
-            element: HTMLElement
+            element: HTMLElement,
+            cooldown: number
         }[] = [];
         document.querySelectorAll<HTMLElement>('.ability').forEach((el) => {
             const id = el.dataset.ability ?? "";
+            const cooldown = parseFloat(el.dataset.abilityCooldown ?? '0');
             const name = el.querySelector("[data-ability-name]")?.innerHTML ?? "";
             const description = el.querySelector("[data-ability-description]")?.innerHTML ?? "";
             const bind = el.dataset.bind ?? "";
@@ -64,7 +73,8 @@ export class Stats {
                 id, name, description, bind, probability,
                 styleHue: hue,
                 element: el,
-                icon: icon
+                icon: icon,
+                cooldown: cooldown
             });
             totalProbability += probability;
 
@@ -83,7 +93,9 @@ export class Stats {
                 styleHue: ability.styleHue,
                 element: ability.element,
                 icon: ability.icon,
-                count: 0
+                count: 3,
+                useColdown: ability.cooldown,
+                currentCooldown: 0
             });
 
             this.updateAbilityElement(ability.id);
@@ -109,7 +121,7 @@ export class Stats {
 
     public checkAbilityBind(key: string) {
         for(const [id, ability] of this.abilities) {
-            if(ability.bind.toLowerCase() === key.toLowerCase() && ability.count > 0) {
+            if(ability.bind.toLowerCase() === key.toLowerCase() && ability.count > 0 && ability.currentCooldown <= 0) {
                 ability.count -= 1;
                 this.updateAbilityElement(id);
 
@@ -120,7 +132,7 @@ export class Stats {
                 ], { duration: 200, easing: 'ease-out' });
 
                 this.activateAbility.emit(id);
-                // TODO: ability actions
+                ability.currentCooldown = ability.useColdown;
             }
         }
     }
@@ -136,6 +148,17 @@ export class Stats {
             { transform: 'scale(1.1)' },
             { transform: 'scale(1)' },
         ], { duration: 200, easing: 'ease-out' });
+
+        // seenAbilities
+        if(!seenAbilities.has(id)) {
+            if(this.abilityHintTime > 0) {
+                // Hint already shown; queue
+                this.queuedAbilityHints.push(id);
+                return;
+            }
+            this.showAbilityHint(id);
+        }
+        seenAbilities.add(id);
     }
 
     private updateAbilityElement(id: string) {
@@ -156,17 +179,69 @@ export class Stats {
         }
     }
 
-    public update(deltaTime: number) {
+    private showAbilityHint(id: string) {
+        this.abilityHintTime = ABILITY_HINT_DURATION;
+        this.abilityHintShown.emit(true);
+
+        const ability = this.abilities.get(id);
+        if(!ability) return;
+
+        const hintElement = document.getElementById('abilityHint') as HTMLDivElement;
+
+        document.getElementById('new-ability-hint-name')!.innerHTML = ability.name;
+        document.getElementById('new-ability-hint-description')!.innerHTML = ability.description;
+        hintElement.style.setProperty('--ability-hue', ability.styleHue);
+
+        hintElement.classList.add('visible');
+    }
+
+    public update(deltaTime: number, realDeltaTime: number) {
+        if(this.abilityHintTime > 0) {
+            this.abilityHintTime -= realDeltaTime;
+            if(this.abilityHintTime <= 0) {
+                this.abilityHintTime = 0;
+
+                const hintElement = document.getElementById('abilityHint') as HTMLDivElement;
+                hintElement.classList.remove('visible');
+
+                if(this.queuedAbilityHints.length > 0) {
+                    const nextAbilityId = this.queuedAbilityHints.shift()!;
+                    setTimeout(() => {
+                        this.showAbilityHint(nextAbilityId);
+                    }, 250);
+                } else {
+                    this.abilityHintShown.emit(false);
+                }
+            }
+        }
+
         this.time += deltaTime;
 
         // Regenerate energy over time
-        this.energy += deltaTime * 0.1;
+        this.energy += realDeltaTime * 0.1;
         if(this.energy > 1) this.energy = 1;
 
         // Update HUD
         this.timeValueElement.textContent = this.formatTime();
         // this.scoreValueElement.textContent = this.score.toString();
         this.energyFillElement.style.width = `${this.energy * 100}%`;
+
+        // Update ability cooldowns
+        for(const [_id, ability] of this.abilities) {
+            if(ability.currentCooldown > 0) {
+                ability.currentCooldown -= realDeltaTime;
+                if(ability.currentCooldown < 0) ability.currentCooldown = 0;
+
+                const cooldownFraction = ability.currentCooldown / ability.useColdown;
+                ability.element.style.setProperty('--ability-cooldown', `${cooldownFraction * 100}%`);
+            }
+        }
+    }
+
+    public getAbilityCooldown(id: string): number {
+        const ability = this.abilities.get(id);
+        if(!ability) return 0;
+        return ability.useColdown;
     }
 
     public tryTakeEnergy(amount: number): boolean {

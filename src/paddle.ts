@@ -34,7 +34,7 @@ export class Paddle {
 
     private paddleBody: Body | null = null;
 
-    constructor(public x: number, public y: number, public width: number, public height: number) {
+    constructor(public centerX: number, public y: number, public width: number, public height: number) {
     }
 
     /**
@@ -43,7 +43,7 @@ export class Paddle {
     public addToWorld(world: World) {
         this.paddleBody = world.createBody({
             type: 'kinematic',
-            position: { x: this.x + this.width / 2, y: this.y + this.height / 2 },
+            position: { x: this.centerX, y: this.y + this.height / 2 },
         });
 
         this.paddleBody.createFixture({
@@ -59,7 +59,7 @@ export class Paddle {
      * The canvas should be appropriately transformed such that drawing scaled to the canvas in world space is moved to screen space.
      */
     public draw(ctx: CanvasRenderingContext2D) {
-        const x = this.x;
+        const x = this.centerX - this.width / 2;
         const y = this.y;
         const width = this.width;
         const height = this.height;
@@ -96,12 +96,12 @@ export class Paddle {
         // Clamp to arena bounds
         const arenaHalfWidth = 0.5 * 16 / 9;
 
-        if(this.x < -arenaHalfWidth) this.x = -arenaHalfWidth;
-        if(this.x + this.width > arenaHalfWidth) this.x = arenaHalfWidth - this.width;
+        if(this.centerX - this.width / 2 < -arenaHalfWidth) this.centerX = -arenaHalfWidth + this.width / 2;
+        if(this.centerX + this.width / 2 > arenaHalfWidth) this.centerX = arenaHalfWidth - this.width / 2;
 
         if(balls.length === 0) {
             this.velocity *= Math.pow(0.01, deltaTime);
-            this.x += this.velocity * deltaTime;
+            this.centerX += this.velocity * deltaTime;
             return;
         }
 
@@ -111,7 +111,7 @@ export class Paddle {
             return { x: predictedX, y: ball.position.y + ball.velocity.y * lookaheadTime };
         };
 
-        let targetX: number = this.x + this.width / 2;
+        let targetX: number = this.centerX;
         switch(this.aiMode) {
             case PaddleAIMode.FOLLOW_BALL_AVERAGE: {
                 let sumX = 0;
@@ -141,7 +141,7 @@ export class Paddle {
                 let closestScore = Infinity;
                 for(const ball of balls) {
                     const pos = ball.position;
-                    const dx = (pos.x - (this.x + this.width / 2));
+                    const dx = (pos.x - this.centerX);
                     const dy = (pos.y - (this.y + this.height / 2));
                     // Ignore balls under the paddle
                     if(dy > 0) continue;
@@ -164,18 +164,17 @@ export class Paddle {
             }
         }
 
-        const centerX = this.x + this.width / 2;
         // Smooth paddle movement and make it feel less robotic with a PID controller
-        this.velocity = this.pidController.update(targetX, centerX, deltaTime);
+        this.velocity = this.pidController.update(targetX, this.centerX, deltaTime);
         // Clamp velocity to max speed
         if(this.velocity > this.maxSpeed) this.velocity = this.maxSpeed;
         if(this.velocity < -this.maxSpeed) this.velocity = -this.maxSpeed;
 
-        this.x += this.velocity * deltaTime;
+        this.centerX += this.velocity * deltaTime;
 
         // Update paddle body position
         if(this.paddleBody) {
-            this.paddleBody.setPosition({ x: this.x + this.width / 2, y: this.y + this.height / 2 });
+            this.paddleBody.setPosition({ x: this.centerX, y: this.y + this.height / 2 });
         }
     }
 }

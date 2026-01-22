@@ -122,7 +122,7 @@ export class Shader2DCanvas {
     /**
      * Set the value of a uniform variable in the shader program.
      */
-    public setUniform1i(name: string, value: number) {
+    public setUniform1f(name: string, value: number) {
         const gl = this.gl;
         if(!(name in this.uniformLocations)) {
             this.uniformLocations[name] = gl.getUniformLocation(this.program, name) as WebGLUniformLocation;

@@ -1,4 +1,5 @@
 import { Circle, type Body, type World } from "planck";
+import { Signal } from "./signal";
 
 const POWER_UP_RADIUS = 0.02;
 const FADE_OUT_DURATION = 0.3;
@@ -12,6 +13,8 @@ export class PowerUp {
 
     private fadeOut: number = 0;
     public isDestroyed: boolean = false;
+
+    public collected = new Signal<[]>();
 
     public get position(): { x: number, y: number } {
         if(!this.sensorBody) return { x: 0, y: 0 };
@@ -27,11 +30,16 @@ export class PowerUp {
         private initialVelocity: { x: number, y: number },
         public type: string,
         private icon: HTMLImageElement,
-        public color: string,
+        public color: string
     ) {
         // TODO: more power-up types
         // - Energy
         // - Explodey thingy
+    }
+
+    public collect() {
+        this.collected.emit();
+        this.isDestroyed = true;
     }
 
     public addToWorld(world: World) {

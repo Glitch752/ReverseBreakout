@@ -109,7 +109,7 @@ export class Ball {
         return this.destroyed;
     }
     
-    public handleCollision(contact: Contact, otherFixture: Fixture, particles: Particles, stats: Stats) {
+    public handleCollision(contact: Contact, otherFixture: Fixture, particles: Particles) {
         if(!this.ballBody) return;
         
         const otherUserData = otherFixture.getUserData();
@@ -157,8 +157,7 @@ export class Ball {
 
         if(otherUserData instanceof PowerUp) {
             // Collect the power-up
-            stats.addAbility(otherUserData.type);
-            otherUserData.isDestroyed = true;
+            otherUserData.collect();
             particles.emitCircleBurst(
                 otherUserData.position.x,
                 otherUserData.position.y,
@@ -178,10 +177,10 @@ export class Ball {
         if(otherUserData instanceof Paddle) {
             // Paddles don't create a direct reflection; it depends on where on the paddle we hit
             const paddle = otherUserData;
-            const paddlePos = paddle.x;
+            const paddlePos = paddle.centerX;
             const paddleWidth = paddle.width;
             const ballPos = this.ballBody.getPosition();
-            const relativeIntersectX = (ballPos.x - paddlePos) - paddleWidth / 2;
+            const relativeIntersectX = ballPos.x - paddlePos;
             const normalizedRelativeIntersectionX = relativeIntersectX / (paddleWidth / 2);
             const bounceAngle = normalizedRelativeIntersectionX * (Math.PI / 3); // Max 60 degrees
             const speed = Math.max(Ball.MIN_BALL_VELOCITY, this.velocity.length() * restitution);

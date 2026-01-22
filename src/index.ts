@@ -9,13 +9,14 @@ import { Paddle } from './paddle';
 import { Particles } from './particles';
 import { Stats } from './stats';
 import { PowerUp } from './powerUp';
+import { TimeScaleManager } from './timeScaleManager';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
     fragment: bloomFragmentShader
 });
-shader.setUniform1i('bloom_spread', 0.5);
-shader.setUniform1i('bloom_intensity', 0.75);
+shader.setUniform1f('bloom_spread', 0.5);
+shader.setUniform1f('bloom_intensity', 0.75);
 
 const ctx = shader.getContext2D();
 
@@ -187,6 +188,8 @@ class Game {
 
     private gameRunning: boolean = true;
 
+    private timeScaleManager: TimeScaleManager = new TimeScaleManager();
+
     constructor() {
         this.world.on("pre-solve", (contact) => {
             const fixtureA = contact.getFixtureA();
@@ -223,7 +226,7 @@ class Game {
             }
             
             if(ball && ballFixture && otherFixture) {
-                ball.handleCollision(contact, otherFixture, this.particles, this.stats);
+                ball.handleCollision(contact, otherFixture, this.particles);
             }
         });
 
@@ -259,8 +262,26 @@ class Game {
         this.level.spawnPowerUp.connect((pos, vel) => {
             const ability = this.stats.selectAbility();
             const powerUp = new PowerUp(pos, vel, ability.id, ability.icon, ability.color);
+            powerUp.collected.connect(() => {
+                this.stats.addAbility(ability.id);
+            });
             powerUp.addToWorld(this.world);
             this.powerUps.push(powerUp);
+        });
+
+        this.stats.activateAbility.connect((abilityId) => {
+            switch(abilityId) {
+                case 'slowmotion':
+                    this.timeScaleManager.setSlowMotion(true);
+                    setTimeout(() => {
+                        this.timeScaleManager.setSlowMotion(false);
+                    }, this.stats.getAbilityCooldown(abilityId) * 1000 - 500);
+                    break;
+            }
+        });
+
+        this.stats.abilityHintShown.connect((shown) => {
+            this.timeScaleManager.setUIHint(shown);
         });
     }
 
@@ -295,12 +316,16 @@ class Game {
 
         this.camera.trackBalls(this.balls, !this.gameRunning, deltaTime);
 
+        // Update time scale manager
+        this.timeScaleManager.update(deltaTime, this.gameRunning);
+        deltaTime *= this.timeScaleManager.timeScale;
+
+        if(deltaTime <= 1e-7) return;
+        
         // Update particles
         this.particles.update(deltaTime);
 
-        if(!this.gameRunning) return;
-        
-        this.stats.update(deltaTime);
+        this.stats.update(deltaTime, deltaTime / this.timeScaleManager.timeScale);
 
         // Input
         let xForce = 0, yForce = 0;
@@ -421,6 +446,10 @@ class Game {
         this.particles.draw(ctx);
         this.drawWorld();
 
+        // Apply a canvas filter based on slow motion
+        const slowMotionEase = this.timeScaleManager.slowMotionEase;
+        const uiHintEase = this.timeScaleManager.uiHintEase;
+        shader.setUniform1f('filter_amount', (1.0 - slowMotionEase) * (1.0 - uiHintEase));
         shader.render();
     }
 }

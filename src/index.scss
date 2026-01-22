@@ -239,6 +239,26 @@ canvas {
                 border-top-right-radius: 0;
             }
 
+            &::after {
+                // Cooldown overlay
+                content: '';
+                position: absolute;
+                --inset: 3px;
+                top: var(--inset);
+                left: var(--inset);
+                bottom: var(--inset);
+                width: calc(var(--ability-cooldown, 0%) - var(--inset) * 2);
+                // Fade out toward the end
+                opacity: calc(min(1, var(--ability-cooldown, 0%) / 20%));
+                background-color: rgba(255, 255, 255, 0.5);
+                pointer-events: none;
+                --border-radius: calc(10px - var(--inset));
+                border-radius: var(--border-radius) 0 0 var(--border-radius);
+                // Fixes a chrome rendering issue for some reason :sob:
+                border: 1px solid transparent;
+                box-sizing: border-box;
+            }
+
             .keybind, .count {
                 position: absolute;
                 bottom: 100%;

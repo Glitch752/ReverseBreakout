@@ -69,7 +69,7 @@ export class Level {
     }
 
     public update(world: World, deltaTime: number) {
-        this.hitDifficulty += 0.01 * deltaTime;
+        this.hitDifficulty += 0.005 * deltaTime;
         this.layerMovementSpeed += 0.00004 * deltaTime;
 
         let effectiveLayerMovementSpeed = this.layerMovementSpeed;

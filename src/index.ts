@@ -12,8 +12,11 @@ import { Stats } from './stats';
 import { PowerUp } from './powerUp';
 import { TimeScaleManager } from './timeScaleManager';
 import { ScoreTracker } from './scoreTracker';
+import { Sounds, SoundType } from './sounds';
 
-// TODO: Sounds blegh
+(async () => {
+    await Sounds.init();
+})();
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const shader = new Shader2DCanvas(canvas, {
@@ -306,6 +309,7 @@ class Game {
                         );
                         // Move the explosion center down a bit for balance - makes it easier to launch balls upward
                         ball.applyExplosionImpulse(powerUp.position.x, powerUp.position.y + 0.05, 0.001);
+                        Sounds.play(SoundType.Explosion);
                     });
                 } else {
                     // Ability
@@ -324,12 +328,15 @@ class Game {
             switch(abilityId) {
                 case 'slowmotion':
                     this.timeScaleManager.setSlowMotion(true);
+                    Sounds.play(SoundType.SlowMotion);
                     setTimeout(() => {
                         this.timeScaleManager.setSlowMotion(false);
+                        Sounds.play(SoundType.SlowMotionResume);
                     }, this.stats.getAbilityCooldown(abilityId) * 1000 - 500);
                     break;
                 case 'widen':
                     this.paddle.widen();
+                    Sounds.play(SoundType.UsePowerUp);
                     break;
                 case 'split':
                     const newBalls: Ball[] = [];
@@ -348,6 +355,7 @@ class Game {
                         }
                     }
                     this.balls.push(...newBalls);
+                    Sounds.play(SoundType.UsePowerUp);
                     break;
                 case 'slingshot':
                     this.pointSelection = {
@@ -375,6 +383,7 @@ class Game {
                                     );
                                 }
                             }
+                            Sounds.play(SoundType.Launch);
                         },
                         startTime: performance.now()
                     };
@@ -396,6 +405,7 @@ class Game {
                                 );
                                 ball.teleportTo(x + ball.velocity.x * 0.01, y + ball.velocity.y * 0.01);
                             }
+                            Sounds.play(SoundType.Teleport);
                         },
                         startTime: performance.now()
                     };
@@ -405,6 +415,7 @@ class Game {
                         if(ball.isDestroyed()) continue;
                         ball.setGhostMode(this.stats.getAbilityCooldown(abilityId) / 2.0);
                     }
+                    Sounds.play(SoundType.UsePowerUp);
                     break;
                 case 'laser':
                     for(const ball of this.balls) {
@@ -439,6 +450,7 @@ class Game {
                             );
                         }
                     }
+                    Sounds.play(SoundType.LaserShoot);
                     break;
             }
         });
@@ -599,6 +611,7 @@ class Game {
             const bestTime = ScoreTracker.getBestTime() ?? timeSeconds;
             bestTimeElement.textContent = `Best time: ${ScoreTracker.formatTime(bestTime)}`;
         }, 500);
+        Sounds.play(SoundType.GameOver);
     }
     
     private drawWorld() {

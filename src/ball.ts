@@ -3,12 +3,13 @@ import { Block } from "./block";
 import { Paddle } from "./paddle";
 import type { Particles } from "./particles";
 import { PowerUp } from "./powerUp";
-
-// TODO: Ball can get stuck; unstuck if speed too low for too long?
+import { Sounds, SoundType } from "./sounds";
 
 export class Ball {
     public static readonly MIN_BALL_VELOCITY = 0.7;
     public static readonly MAX_BALL_VELOCITY = 3.0;
+
+    private stuckTimer: number = 0;
     
     private ballBody: Body | null;
     private destroyed: boolean = false;
@@ -98,6 +99,16 @@ export class Ball {
             this.ballBody.setLinearVelocity(v);
         }
 
+        const potentiallyStuck = speed < Ball.MIN_BALL_VELOCITY * 0.2;
+        if(potentiallyStuck) {
+            this.stuckTimer += deltaTime;
+            if(this.stuckTimer > 1.0) {
+                this.ghostModeTimer = 0.25;
+            }
+        } else {
+            this.stuckTimer = 0;
+        }
+
         // Make sure the ball can't get "soft-locked" going sideways
         const v = this.ballBody.getLinearVelocity();
         if(Math.abs(v.y) < 0.2) {
@@ -169,6 +180,8 @@ export class Ball {
                 0.5,
                 otherUserData.outlineColor
             );
+
+            Sounds.play(SoundType.Bounce);
         }
 
         if(otherUserData instanceof PowerUp) {
@@ -225,6 +238,8 @@ export class Ball {
                 0.3,
                 'white'
             );
+
+            Sounds.play(SoundType.BouncePaddle);
             return;
         }
         
@@ -242,6 +257,8 @@ export class Ball {
         reflected.mul(Math.max(Ball.MIN_BALL_VELOCITY, v.length() * restitution));
         
         this.ballBody.setLinearVelocity(reflected);
+
+        Sounds.play(SoundType.BounceLight);
     }
     
     public applyForce(x: number, y: number) {
@@ -283,6 +300,8 @@ export class Ball {
         if(this.ballBody) {
             world.destroyBody(this.ballBody);
             this.ballBody = null;
+
+            Sounds.play(SoundType.BallLost);
         }
         this.destroyed = true;
     }

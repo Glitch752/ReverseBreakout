@@ -54,7 +54,7 @@ export class Level {
     private addedBlockLayers: number = 1;
     private blockOffsetY: number = 0;
 
-    private layerMovementSpeed: number = 0.004; // units per second
+    private layerMovementSpeed: number = 0.003; // units per second
     /** A higher hit difficulty increases the chances that blocks require multiple hits to be destroyed */
     private hitDifficulty: number = 0;
 

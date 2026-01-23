@@ -1,5 +1,6 @@
 import { ScoreTracker } from "./scoreTracker";
 import { Signal } from "./signal";
+import { Sounds, SoundType } from "./sounds";
 
 // Intentionally not persisted in browser storage but persisted across game runs
 const seenAbilities: Set<string> = new Set();
@@ -228,6 +229,7 @@ export class Stats {
     public addEnergy(amount: number) {
         this.energy += amount;
         if(this.energy > 1) this.energy = 1;
+        Sounds.play(SoundType.PickupEnergy);
     }
 
     public update(deltaTime: number, realDeltaTime: number) {

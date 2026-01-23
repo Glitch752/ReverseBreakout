@@ -1,6 +1,7 @@
 import { Box, World, Body } from "planck";
 import { Signal } from "./signal";
 import type { Particles } from "./particles";
+import { Sounds, SoundType } from "./sounds";
 
 const BLOCK_FADE_IN_DURATION = 500; // milliseconds
 const easeOutCubic = (t: number): number => {
@@ -125,8 +126,10 @@ export class Block {
                 0.5,
                 this.outlineColor
             );
+
+            Sounds.play(SoundType.BreakBlock);
         } else {
-            if(Math.random() < Math.pow(0.9, this.hitsRemaining) * 0.7) {
+            if(Math.random() < Math.pow(0.9, this.hitsRemaining)) {
                 this.spawnPowerUp.emit();
             }
         }

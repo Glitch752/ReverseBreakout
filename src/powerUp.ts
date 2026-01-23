@@ -1,6 +1,7 @@
 import { Circle, type Body, type World } from "planck";
 import { Signal } from "./signal";
 import type { Ball } from "./ball";
+import { Sounds, SoundType } from "./sounds";
 
 const POWER_UP_RADIUS = 0.025;
 const FADE_OUT_DURATION = 0.3;
@@ -37,6 +38,8 @@ export class PowerUp {
     public collect(ball: Ball) {
         this.collected.emit(ball);
         this.isDestroyed = true;
+        
+        Sounds.play(SoundType.PowerUp);
     }
 
     public addToWorld(world: World) {

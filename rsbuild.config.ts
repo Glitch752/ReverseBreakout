@@ -5,10 +5,14 @@ import { pluginSass } from '@rsbuild/plugin-sass';
 export default defineConfig({
     plugins: [pluginSass()],
     html: {
-        template: './index.html',
+        template: './index.html'
     },
     server: {
         port: 51734
+    },
+    output: {
+        // Use relative paths
+        assetPrefix: "./"
     },
     tools: {
         rspack: {

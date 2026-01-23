@@ -125,6 +125,10 @@ export class Block {
                 0.5,
                 this.outlineColor
             );
+        } else {
+            if(Math.random() < Math.pow(0.9, this.hitsRemaining) * 0.7) {
+                this.spawnPowerUp.emit();
+            }
         }
 
         return this.hitsRemaining <= 0;
@@ -146,8 +150,6 @@ export class Block {
         world.destroyBody(this.blockBody);
 
         // Could use a dynamic scale for balanceing
-        // if(Math.random() < 0.3) {
         this.spawnPowerUp.emit();
-        // }
     }
 }

@@ -46,7 +46,7 @@
                 <span id="new-ability-hint-description">Description</span>
             </div>
 
-            <div class="ability" data-ability="split" data-bind="Digit1" style="--ability-hue: 90deg" data-ability-probability="0.6" data-ability-cooldown="5">
+            <div class="ability" data-ability="split" data-bind="Digit1" style="--ability-hue: 90deg" data-ability-probability="0.6" data-ability-cooldown="3">
                 <span class="count">x1</span>
                 <pre class="keybind">1</pre>
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-1.45 0-2.475-1.025T8.5 18.5t1.025-2.475T12 15t2.475 1.025T15.5 18.5t-1.025 2.475T12 22m0-13q-1.45 0-2.475-1.025T8.5 5.5t1.025-2.475T12 2t2.475 1.025T15.5 5.5t-1.025 2.475T12 9m0-2q.625 0 1.063-.437T13.5 5.5t-.437-1.062T12 4t-1.062.438T10.5 5.5t.438 1.063T12 7m-6.5 8.5q-1.45 0-2.475-1.025T2 12t1.025-2.475T5.5 8.5t2.475 1.025T9 12t-1.025 2.475T5.5 15.5m0-2q.625 0 1.063-.437T7 12t-.437-1.062T5.5 10.5t-1.062.438T4 12t.438 1.063T5.5 13.5m13 2q-1.45 0-2.475-1.025T15 12t1.025-2.475T18.5 8.5t2.475 1.025T22 12t-1.025 2.475T18.5 15.5m0-2q.625 0 1.063-.437T20 12t-.437-1.062T18.5 10.5t-1.062.438T17 12t.438 1.063t1.062.437"/></svg>
@@ -79,7 +79,7 @@
                 </div>
             </div>
             
-            <div class="ability" data-ability="widen" data-bind="Digit4" style="--ability-hue: 230deg" data-ability-probability="1" data-ability-cooldown="0.5">
+            <div class="ability" data-ability="widen" data-bind="Digit4" style="--ability-hue: 230deg" data-ability-probability="0.8" data-ability-cooldown="0.5">
                 <span class="count">x1</span>
                 <pre class="keybind">4</pre>
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zM20 6H4v12h16zM4 6v12zm5 7.8v-3.6q0-.35-.3-.475t-.55.125L6.7 11.3q-.3.3-.3.7t.3.7l1.45 1.45q.25.25.55.125T9 13.8m8.3-2.5l-1.45-1.45q-.25-.25-.55-.125t-.3.475v3.6q0 .35.3.475t.55-.125l1.45-1.45q.3-.3.3-.7t-.3-.7"/></svg>
@@ -130,14 +130,16 @@
         </div>
     </div>
     <div class="game-over" id="game-over" data-game-ui>
-        <h1>Game Over</h1>
-        <span class="reason" id="game-over-reason">No more balls!</span>
-        
-        <span id="final-time">Time: 0:00.000</span>
-        <span id="best-time">Best time: 0:00.000</span>
-
-        <button id="restart-button">Restart</button>
-        <button id="menu-button">Menu</button>
+        <div class="game-over-content">
+            <h1>Game Over</h1>
+            <span class="reason" id="game-over-reason">No more balls!</span>
+            
+            <span class="time" id="final-time">Time: 0:00.000</span>
+            <span class="time" id="best-time">Best time: 0:00.000</span>
+    
+            <button id="restart-button">Restart</button>
+            <button id="menu-button">Menu</button>
+        </div>
     </div>
     <canvas id="canvas"></canvas>
 </body>

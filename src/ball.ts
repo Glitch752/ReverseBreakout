@@ -4,6 +4,8 @@ import { Paddle } from "./paddle";
 import type { Particles } from "./particles";
 import { PowerUp } from "./powerUp";
 
+// TODO: Ball can get stuck; unstuck if speed too low for too long?
+
 export class Ball {
     public static readonly MIN_BALL_VELOCITY = 0.7;
     public static readonly MAX_BALL_VELOCITY = 3.0;

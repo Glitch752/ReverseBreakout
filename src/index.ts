@@ -11,6 +11,7 @@ import { Particles } from './particles';
 import { Stats } from './stats';
 import { PowerUp } from './powerUp';
 import { TimeScaleManager } from './timeScaleManager';
+import { ScoreTracker } from './scoreTracker';
 
 // TODO: Sounds blegh
 
@@ -37,6 +38,8 @@ window.addEventListener('mousemove', (event) => {
     lastMouseY = event.clientY;
 });
 
+document.getElementById("scoreDisplay")!.innerText = `Best time: ${ScoreTracker.formatTime(ScoreTracker.getBestTime() ?? 0)}`;
+
 function draw(time: number) {
     if(lastTime === null) lastTime = time - 16;
     const deltaTime = Math.min((time - lastTime) / 1000, 1 / 20);
@@ -55,19 +58,21 @@ function draw(time: number) {
         const ballRadius = 10;
         const restitution = 0.9;
 
+        const width = canvas.width, height = canvas.height;
+
         // Bounce off of screen
-        if(menuBall.x < canvas.width * -0.5 + ballRadius) {
-            menuBall.x = canvas.width * -0.5 + ballRadius;
+        if(menuBall.x < width * -0.5 + ballRadius) {
+            menuBall.x = width * -0.5 + ballRadius;
             menuBall.vx = -menuBall.vx * restitution;
-        } else if(menuBall.x > canvas.width * 0.5 - ballRadius) {
-            menuBall.x = canvas.width * 0.5 - ballRadius;
+        } else if(menuBall.x > width * 0.5 - ballRadius) {
+            menuBall.x = width * 0.5 - ballRadius;
             menuBall.vx = -menuBall.vx * restitution;
         }
-        if(menuBall.y < canvas.height * -0.5 + ballRadius) {
-            menuBall.y = canvas.height * -0.5 + ballRadius;
+        if(menuBall.y < height * -0.5 + ballRadius) {
+            menuBall.y = height * -0.5 + ballRadius;
             menuBall.vy = -menuBall.vy * restitution;
-        } else if(menuBall.y > canvas.height * 0.5 - ballRadius) {
-            menuBall.y = canvas.height * 0.5 - ballRadius;
+        } else if(menuBall.y > height * 0.5 - ballRadius) {
+            menuBall.y = height * 0.5 - ballRadius;
             menuBall.vy = -menuBall.vy * restitution;
         }
 
@@ -75,10 +80,10 @@ function draw(time: number) {
         const bounceElements = document.querySelectorAll<HTMLElement>('[data-bounce-menu-ball]');
         bounceElements.forEach((el) => {
             const rect = el.getBoundingClientRect();
-            const elLeft = rect.left - canvas.width / 2;
-            const elRight = rect.right - canvas.width / 2;
-            const elTop = rect.top - canvas.height / 2;
-            const elBottom = rect.bottom - canvas.height / 2;
+            const elLeft = rect.left * window.devicePixelRatio - width / 2;
+            const elRight = rect.right * window.devicePixelRatio - width / 2;
+            const elTop = rect.top * window.devicePixelRatio - height / 2;
+            const elBottom = rect.bottom * window.devicePixelRatio - height / 2;
 
             if(menuBall.x + ballRadius > elLeft && menuBall.x - ballRadius < elRight &&
                menuBall.y + ballRadius > elTop && menuBall.y - ballRadius < elBottom) {
@@ -128,8 +133,8 @@ function draw(time: number) {
         ctx.stroke();
 
         // Attract to the cursor
-        const toMouseX = lastMouseX - (canvas.width / 2 + menuBall.x);
-        const toMouseY = lastMouseY - (canvas.height / 2 + menuBall.y);
+        const toMouseX = lastMouseX * window.devicePixelRatio - (canvas.width / 2 + menuBall.x);
+        const toMouseY = lastMouseY * window.devicePixelRatio - (canvas.height / 2 + menuBall.y);
         const toMouseDist = Math.sqrt(toMouseX * toMouseX + toMouseY * toMouseY);
         if(toMouseDist > 1) {
             const toMouseNormX = toMouseX / toMouseDist;
@@ -154,6 +159,11 @@ function startGame() {
     }
 }
 document.getElementById("startButton")!.addEventListener("click", startGame);
+document.getElementById("restart-button")!.addEventListener("click", () => {
+    showMenu();
+    startGame();
+});
+document.getElementById("menu-button")!.addEventListener("click", showMenu);
 
 document.addEventListener('keydown', (event) => {
     if(game) game.onKeyDown(event);
@@ -282,7 +292,7 @@ class Game {
                     powerUp.collected.connect(() => {
                         this.stats.addEnergy(0.2);
                     });
-                } else if(rand < 0.25) {
+                } else if(rand < 0.2) {
                     // Explodey thingy
                     powerUp = new PowerUp(pos, vel, this.stats.explodeyIcon, true, '#ff5555');
                     powerUp.collected.connect((ball) => {
@@ -571,10 +581,24 @@ class Game {
 
     private gameOver() {
         this.gameRunning = false;
-        // TODO: Game over menu
-        // setTimeout(() => {
-        //     showMenu();
-        // }, 5000);
+        const gameOverElement = document.getElementById("game-over")!;
+        gameOverElement.classList.remove('visible');
+        gameOverElement.style.display = 'flex';
+        setTimeout(() => {
+            gameOverElement.classList.add('visible');
+
+            const reasonElement = document.getElementById("game-over-reason")!;
+            reasonElement.textContent = this.balls.length === 0 ? "No more balls!" : "Blocks reached the bottom!";
+            
+            const timeSeconds = this.stats.time;
+            ScoreTracker.submitTime(timeSeconds);
+
+            const finalTimeElement = document.getElementById("final-time")!;
+            finalTimeElement.textContent = `Time: ${ScoreTracker.formatTime(timeSeconds)}`;
+            const bestTimeElement = document.getElementById("best-time")!;
+            const bestTime = ScoreTracker.getBestTime() ?? timeSeconds;
+            bestTimeElement.textContent = `Best time: ${ScoreTracker.formatTime(bestTime)}`;
+        }, 500);
     }
     
     private drawWorld() {

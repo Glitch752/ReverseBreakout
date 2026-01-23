@@ -54,7 +54,7 @@ export class Level {
     private addedBlockLayers: number = 1;
     private blockOffsetY: number = 0;
 
-    private layerMovementSpeed: number = 0.002; // units per second
+    private layerMovementSpeed: number = 0.004; // units per second
     /** A higher hit difficulty increases the chances that blocks require multiple hits to be destroyed */
     private hitDifficulty: number = 0;
 
@@ -70,7 +70,7 @@ export class Level {
 
     public update(world: World, deltaTime: number) {
         this.hitDifficulty += 0.01 * deltaTime;
-        this.layerMovementSpeed += 0.00002 * deltaTime;
+        this.layerMovementSpeed += 0.00004 * deltaTime;
 
         let effectiveLayerMovementSpeed = this.layerMovementSpeed;
         

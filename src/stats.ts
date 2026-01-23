@@ -1,3 +1,4 @@
+import { ScoreTracker } from "./scoreTracker";
 import { Signal } from "./signal";
 
 // Intentionally not persisted in browser storage but persisted across game runs
@@ -256,7 +257,7 @@ export class Stats {
         if(this.energy > 1) this.energy = 1;
 
         // Update HUD
-        this.timeValueElement.textContent = this.formatTime();
+        this.timeValueElement.textContent = ScoreTracker.formatTime(this.time);
         // this.scoreValueElement.textContent = this.score.toString();
         this.energyFillElement.style.width = `${this.energy * 100}%`;
 
@@ -287,15 +288,5 @@ export class Stats {
         const portion = this.energy / amount;
         this.energy = 0;
         return portion;
-    }     
-
-    private formatTime(): string {
-        let totalSeconds = Math.floor(this.time);
-        const minutes = Math.floor(totalSeconds / 60);
-        totalSeconds -= minutes * 60;
-        const seconds = totalSeconds;
-        const secondFraction = (this.time - Math.floor(this.time));
-
-        return `${minutes}:${seconds.toString().padStart(2, '0')}.${secondFraction.toFixed(3).slice(2)}`;
     }
 }

@@ -103,7 +103,7 @@ export class Paddle {
      */
     public update(deltaTime: number, balls: Ball[]) {
         // Slowly return to base width
-        const easeFactor = 1.0 - Math.pow(0.8, deltaTime);
+        const easeFactor = 1.0 - Math.pow(0.95, deltaTime);
         this.width += (this.baseWidth - this.width) * easeFactor;
 
         // Clamp to arena bounds

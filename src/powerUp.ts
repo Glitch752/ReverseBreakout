@@ -45,6 +45,7 @@ export class PowerUp {
             position: this.initialPosition,
             linearVelocity: this.initialVelocity,
         });
+        if(this.sensorBody === null) return; // Can happen for some reason??
         this.sensorBody.createFixture({
             shape: new Circle(POWER_UP_RADIUS * 1.5),
             // isSensor: true,

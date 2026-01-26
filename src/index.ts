@@ -495,7 +495,7 @@ class Game {
         if(this.pointSelection) {
             if(performance.now() - this.pointSelection.startTime < 100) return; // Prevent likely-accidental immediate selection
 
-            const worldPos = this.camera.projectToWorld(event.clientX, event.clientY, canvas);
+            const worldPos = this.camera.projectToWorld(event.clientX * window.devicePixelRatio, event.clientY * window.devicePixelRatio, canvas);
             this.pointSelection.callback(worldPos.x, worldPos.y);
             this.pointSelection = null;
             return;

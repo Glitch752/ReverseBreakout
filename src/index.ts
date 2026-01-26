@@ -37,8 +37,8 @@ let lastMouseX = canvas.width / 2;
 let lastMouseY = canvas.height * 2 / 3;
 
 window.addEventListener('mousemove', (event) => {
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
+    lastMouseX = event.clientX * window.devicePixelRatio;
+    lastMouseY = event.clientY * window.devicePixelRatio;
 });
 
 document.getElementById("scoreDisplay")!.innerText = `Best time: ${ScoreTracker.formatTime(ScoreTracker.getBestTime() ?? 0)}`;
@@ -136,8 +136,8 @@ function draw(time: number) {
         ctx.stroke();
 
         // Attract to the cursor
-        const toMouseX = lastMouseX * window.devicePixelRatio - (canvas.width / 2 + menuBall.x);
-        const toMouseY = lastMouseY * window.devicePixelRatio - (canvas.height / 2 + menuBall.y);
+        const toMouseX = lastMouseX - (canvas.width / 2 + menuBall.x);
+        const toMouseY = lastMouseY - (canvas.height / 2 + menuBall.y);
         const toMouseDist = Math.sqrt(toMouseX * toMouseX + toMouseY * toMouseY);
         if(toMouseDist > 1) {
             const toMouseNormX = toMouseX / toMouseDist;
